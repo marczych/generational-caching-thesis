@@ -5,31 +5,37 @@
 
 \begin{document}
 
-\title{\vfill Title}
+\title{\vfill Survey Paper Proposal: Web Application Caching}
 
 \author{
 By Marc Zych \vspace{10pt} \\
-Stuff \vspace{10pt} \\
-Stuff \vspace{10pt} \\
+CSC 560: Grad Databases \vspace{10pt} \\
+Dr. Alexander Dekhtyar \vspace{10pt} \\
 }
-\date{Stuff}
+\date{October 9, 2012}
 
 \maketitle
 
-\begin{abstract}
-Stuff
-\end{abstract}
+% \begin{abstract}
+% Stuff
+% \end{abstract}
 
 \thispagestyle{empty}
 \newpage
 
-\tableofcontents
-\newpage
-\begin{multicols}{2}
+%\tableofcontents
 
-\section{Stuff}
+%\newpage
+%\begin{multicols}{2}
 
-\end{multicols}
+\section{Topic Description}
+A common method of scaling web applications is to use an in-memory cache that is shared between all web servers.
+One such system is \texttt{memcached}.
+This reduces server load and page response times by storing expensive calculations for later use.
+To make caching as useful as possible, improving the application's cache hit rate is paramount.
+What data is cached, how to determine the cache key, and how to handle updates are critical issues that directly affect the cache hit rate and how effective it is.
+
+%\end{multicols}
 
 \newpage
 \nocite{*}
