@@ -1,8 +1,8 @@
-thesis.pdf: thesis.tex thesis.bib
-	pdflatex thesis
-	bibtex thesis
-	pdflatex thesis
-	pdflatex thesis
+memcache-survey.pdf: memcache-survey.tex memcache-survey.bib
+	pdflatex memcache-survey
+	bibtex memcache-survey
+	pdflatex memcache-survey
+	pdflatex memcache-survey
 
 clean:
-	rm -rf thesis.log thesis.pdf thesis.blg thesis.bbl thesis.aux
+	rm -rf memcache-survey.log memcache-survey.pdf memcache-survey.blg memcache-survey.bbl memcache-survey.aux
