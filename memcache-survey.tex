@@ -29,6 +29,63 @@ Dr. Alexander Dekhtyar \vspace{10pt} \\
 %\begin{multicols}{2}
 
 \section{Related Work}
+Web scalability has been an issue for web sites since the dot-com boom of the late nineties.
+All moderately sized websites experience these issues as their breadth of content as well as the number of active users grow.
+The ubiquitous solution to this problem is some form of caching.
+Although client-side and web proxy caching are still valuable, we will be focusing on server-side caching mechanisms.
+Although most web servers employ generous amounts of caching, the methods and approaches used vary widely.
+
+\subsection{What to cache}
+Some research has been done looking into what data is most efficiently cached.
+Many sources propose that fragments of HTML are the most useful data to cache. \cite{comparisonOfCachingSolutions}
+This is because HTML is ultimately sent to the user so the server can avoid hitting the persistent store in addition to avoiding running the template generation logic. \cite{howBasecampGotSoFast}
+
+One paper proposed that enforcing cache admission policies was a valuable way to improve hit ratio. \cite{cacheAdmissionPolicies}
+The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
+Detecting such queries and leaving them out of the cache leaves more room for frequently accessed queries thus increasing cache hit ratio.
+However, another paper suggested the opposite.
+That is eviction policies and cache expiration is not an issue because the size of caches are not an issue and can easily be expanded. \cite{refreshingPerspectiveSearch}
+
+\subsection{How to cache}
+Most web application caching research revolves around caching strategies.
+The underlying cache daemon is largely irrelevant and can be used for most of the proposed solutions.
+Memcached is by far the most popular web caching system; it is currently deployed by Facebook, LiveJournal, and countless other websites.
+
+The exception to this trend is a paper that proposes an alternative called SQLCached. \cite{sqlCached}
+This tool offers a few things that memcached doesn't: complex data types and rich querying for retrieval and invalidation.
+The system provided notable performance gains for the example workload.
+However, memcached is a more general purpose caching system that has many benefits including O(1) operations and inherently distributed nature.
+
+Static caches are only updated periodically and are not modified by the web application.
+Static caches are popular for search engines because a large amount of search queries' results return the same data for long amounts of time.
+Analysis of users' requests can be performed to determine the best way to use the static cache.
+In particular, the knapsack and optimal packing problems can be used to fill the static cache if the request frequency and size of cacheable items can be determined. \cite{designTradeOffsSearchEngine}
+
+
+\subsection{How to handle freshness}
+The most difficult problem regarding caches is ensuring consistency with the underlying persistent data store.
+
+\subsubsection{Search Engines}
+The largest body of research for web caching focuses on search engines because of their monumental data set and request rate.
+One paper proposed a system that does not invalidate caches but rather determines cache freshness upon cache hit. \cite{cacheInvalidationWebSearch}
+This is done by including a timestamp corresponding to the generation time in the cached object.
+Upon cache hit the timestamp is compared against a query index that is updated as the underlying data is updated.
+
+Another paper exploits the cache expiration time to invalidate caches. \cite{refreshingPerspectiveSearch}
+The idea was that serving slightly stale data isn't terrible for search engines.
+Additionally, the rate of change can be determined for a given query.
+This value can then be used to set the expiration time allowing more frequently changing data to expire more frequently.
+
+\subsection{Eviction Policies}
+
+\subsection{How to Implement}
+\cite{triggerBasedORM} and \cite{keyBasedCacheExpiration} and \cite{scalableConsistentCaching}
+
+\subsection{Related Area: Search}
+\cite{cacheInvalidationWebSearch} and \cite{refreshingPerspectiveSearch} and \cite{cacheAdmissionPolicies} and \cite{designTradeOffsSearchEngine}
+
+
+\section{Summaries}
 triggerBasedORM \cite{triggerBasedORM}
 Proposes CacheGenie: a caching middleware which makes it easy for web application developers to use caching mechanisms in their applications.
 Developer doesn't worry about cache invalidation while writing application code.
