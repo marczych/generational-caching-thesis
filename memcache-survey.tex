@@ -32,13 +32,12 @@ Dr. Alexander Dekhtyar \vspace{10pt} \\
 Web scalability has been an issue for web sites since the dot-com boom of the late nineties.
 All moderately sized websites experience these issues as their breadth of content as well as the number of active users grow.
 The ubiquitous solution to this problem is some form of caching.
-Although client-side and web proxy caching are still valuable, we will be focusing on server-side caching mechanisms.
 Although most web servers employ generous amounts of caching, the methods and approaches used vary widely.
 
 \subsection{What to cache}
 Some research has been done looking into what data is most efficiently cached.
-Many sources propose that fragments of HTML are the most useful data to cache. \cite{comparisonOfCachingSolutions}
-This is because HTML is ultimately sent to the user so the server can avoid hitting the persistent store in addition to avoiding running the template generation logic. \cite{howBasecampGotSoFast}
+Many sources propose that fragments of HTML are the most useful data to cache. \cite{comparisonOfCachingSolutions} \cite{scalableConsistentCaching}
+Since HTML is ultimately sent to the user, for a cache hit the server avoids hitting the persistent store as well as skipping the HTML generation code. \cite{howBasecampGotSoFast}
 
 One paper proposed that enforcing cache admission policies was a valuable way to improve hit ratio. \cite{cacheAdmissionPolicies}
 The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
@@ -59,95 +58,117 @@ However, memcached is a more general purpose caching system that has many benefi
 Static caches are only updated periodically and are not modified by the web application.
 Static caches are popular for search engines because a large amount of search queries' results return the same data for long amounts of time.
 Analysis of users' requests can be performed to determine the best way to use the static cache.
-In particular, the knapsack and optimal packing problems can be used to fill the static cache if the request frequency and size of cacheable items can be determined. \cite{designTradeOffsSearchEngine}
-
+In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined. \cite{designTradeOffsSearchEngine}
+Many papers propose a 2 or 3-level cache involving both a static and dynamic cache. \cite{cacheAdmissionPolicies} \cite{designTradeOffsSearchEngine}
 
 \subsection{How to handle freshness}
 The most difficult problem regarding caches is ensuring consistency with the underlying persistent data store.
+The largest body of research for web caching focuses on search engines because of their monumental data set, request rate and constantly changing data.
 
-\subsubsection{Search Engines}
-The largest body of research for web caching focuses on search engines because of their monumental data set and request rate.
+\subsubsection{Timestamps}
 One paper proposed a system that does not invalidate caches but rather determines cache freshness upon cache hit. \cite{cacheInvalidationWebSearch}
 This is done by including a timestamp corresponding to the generation time in the cached object.
 Upon cache hit the timestamp is compared against a query index that is updated as the underlying data is updated.
 
+37Signals employs a technique called key based cache expiration. \cite{keyBasedCacheExpiration}
+The idea is that a timestamp corresponding to the last time the object was updated is included in the keys for any caches.
+The timestamp is updated once the object is modified thus invalidating all necessary keys.
+This approach also updates the timestamps of any objects that depend on the modified object.
+
+\subsubsection{Expiration times}
 Another paper exploits the cache expiration time to invalidate caches. \cite{refreshingPerspectiveSearch}
 The idea was that serving slightly stale data isn't terrible for search engines.
 Additionally, the rate of change can be determined for a given query.
-This value can then be used to set the expiration time allowing more frequently changing data to expire more frequently.
+This value can then be used to set the expiration time allowing more frequently changing data to have a shorter time to live and infrequently changing data will have a longer time to live.
+
+\subsubsection{Dependency graph}
+One paper describes a system that constructs a dependency graph that is used when invalidating caches. \cite{scalableConsistentCaching}
+For example, if one event occurs then multiple caches may need to be invalidated based on the generated graph.
 
 \subsection{Eviction Policies}
+Despite what \cite{refreshingPerspectiveSearch} claims, research has been done investigating eviction policies.
+Least recently used (LRU) is a commonly used eviction policy from operating systems to CPU caches to dynamic web data.
+There has been research into least likely to be used (LLU) which is an optimal policy that can be approximated by various techniques.
+
+\subsection{Locality}
+All computer caches work by exploiting spatial and temporal locality.
+Research has been done looking into maximizing these traits for web application caching. \cite{onCachingSearchEngineResults} \cite{cacheAdmissionPolicies}
 
 \subsection{How to Implement}
-\cite{triggerBasedORM} and \cite{keyBasedCacheExpiration} and \cite{scalableConsistentCaching}
+Many approaches have been proposed for how to implement caching strategies in web application code.
+The most straight forward method is to explicitly get, set, and invalidate caches wherever they are needed.
+However, this is tedious and error-prone. \cite{keyBasedCacheExpiration} \cite{triggerBasedORM}
+A preferrable alternative is to have caching built directly into the underlying application code.
+Ruby on Rails provides a very rich data model that handles most of the caching details behind the scenes. \cite{keyBasedCacheExpiration}
 
-\subsection{Related Area: Search}
-\cite{cacheInvalidationWebSearch} and \cite{refreshingPerspectiveSearch} and \cite{cacheAdmissionPolicies} and \cite{designTradeOffsSearchEngine}
+Another Object Relational Model (ORM) has been developed for the Django web framework that automatically handles all necessary caching operations which leaves the developer to write application code. \cite{triggerBasedORM}
+The project, CacheGenie, provides Python callbacks to database triggers that will be called when queries are run on the database. This allows the tool to update and/or invalidate caches depending on the queries.
+The major advantage of this approach is that no matter how the data is changed (even through raw SQL queries from a remote host) the cache remains consistent.
+Other projects have used database triggers with similar results. \cite{scalableConsistentCaching}
 
+% \section{Summaries}
+% triggerBasedORM \cite{triggerBasedORM}
+% Proposes CacheGenie: a caching middleware which makes it easy for web application developers to use caching mechanisms in their applications.
+% Developer doesn't worry about cache invalidation while writing application code.
+% Uses memcached.
+% Uses database triggers to update/invalidate cache.
+% Various consistency schemes.
+% Caching lists and incrementally updating contents.
 
-\section{Summaries}
-triggerBasedORM \cite{triggerBasedORM}
-Proposes CacheGenie: a caching middleware which makes it easy for web application developers to use caching mechanisms in their applications.
-Developer doesn't worry about cache invalidation while writing application code.
-Uses memcached.
-Uses database triggers to update/invalidate cache.
-Various consistency schemes.
-Caching lists and incrementally updating contents.
+% sqlCached \cite{sqlCached}
+% Didn't like Memcached so they wrote their own caching thing using sqllite.
+% Specifically wanted rich querying and complex data.
 
-sqlCached \cite{sqlCached}
-Didn't like Memcached so they wrote their own caching thing using sqllite.
-Specifically wanted rich querying and complex data.
+% cacheInvalidationWebSearch \cite{cacheInvalidationWebSearch}
+% Web search caching.
+% Online cache invalidation.
+% Query-driven cache invalidationf ramework - invalidation devision occurs on cache hit which avoids redundant invalidations.
+% Use generation time of cached queries.
+% Handles additions, updates, and deletions.
 
-cacheInvalidationWebSearch \cite{cacheInvalidationWebSearch}
-Web search caching.
-Online cache invalidation.
-Query-driven cache invalidationf ramework - invalidation devision occurs on cache hit which avoids redundant invalidations.
-Use generation time of cached queries.
-Handles additions, updates, and deletions.
+% refreshingPerspectiveSearch \cite{refreshingPerspectiveSearch}
+% Eviction policies are not the issue because of the size of caches - freshness is.
+% Use a TTL and let it expire - easy but not very good.
+% Propose a strategy that refreshes caches, the time being dynamic - this is in addition to TTLs.
 
-refreshingPerspectiveSearch \cite{refreshingPerspectiveSearch}
-Eviction policies are not the issue because of the size of caches - freshness is.
-Use a TTL and let it expire - easy but not very good.
-Propose a strategy that refreshes caches, the time being dynamic - this is in addition to TTLs.
+% cacheAdmissionPolicies \cite{cacheAdmissionPolicies}
+% Proposes admission policies to prevent infrequent or even singleton queries from polluting the cache.
+% Temporal locality.
+% Singleton queries are single results that never occur again and increases cache misses because of evictions.
+% Propose optimal admission policy over LRU that uses a heuristic to separate infrequent queries from frequent ones.
+% Two stage cache - one for admission regulated queries and another for all other ones using LRU.
+% Uses previous data to determine important ones.
 
-cacheAdmissionPolicies \cite{cacheAdmissionPolicies}
-Proposes admission policies to prevent infrequent or even singleton queries from polluting the cache.
-Temporal locality.
-Singleton queries are single results that never occur again and increases cache misses because of evictions.
-Propose optimal admission policy over LRU that uses a heuristic to separate infrequent queries from frequent ones.
-Two stage cache - one for admission regulated queries and another for all other ones using LRU.
-Uses previous data to determine important ones.
+% designTradOffs \cite{designTradeOffsSearchEngine}
+% Studies trade-offs in static vs. dynamic caching, caching query results vs. caching posting lists.
+% Correlates to the knapsack problem (optimal packing) for static cache.
+% You know frequencies and sizes beforehand and can take a long time to come up with the best set to cache.
 
-designTradOffs \cite{designTradeOffsSearchEngine}
-Studies trade-offs in static vs. dynamic caching, caching query results vs. caching posting lists.
-Correlates to the knapsack problem (optimal packing) for static cache.
-You know frequencies and sizes beforehand and can take a long time to come up with the best set to cache.
+% keyBasedCacheExpiration \cite{keyBasedCacheExpiration}
+% Generational caching - use last modified as part of the cache key so you don't ever have to explicitly delete anything.
+% Automatically invalidates all of your caches.
 
-keyBasedCacheExpiration \cite{keyBasedCacheExpiration}
-Generational caching - use last modified as part of the cache key so you don't ever have to explicitly delete anything.
-Automatically invalidates all of your caches.
+% comparisonOfCachingSolutions \cite{comparisonOfCachingSolutions}
+% Caching dynamic pages is difficult so do fragments of HTML instead.
+% Proposes Dynamic Content Acceleration solution which does just that.
+% Mentions observation-based invalidation.
 
-comparisonOfCachingSolutions \cite{comparisonOfCachingSolutions}
-Caching dynamic pages is difficult so do fragments of HTML instead.
-Proposes Dynamic Content Acceleration solution which does just that.
-Mentions observation-based invalidation.
+% timestamp \cite{timestampCacheInvalidation}
+% Include last updated timestamp for queries and predict when the data is stale.
+% Predict when items are stale and update them accordingly.
 
-timestamp \cite{timestampCacheInvalidation}
-Include last updated timestamp for queries and predict when the data is stale.
-Predict when items are stale and update them accordingly.
+% onCachingSerachEngineREsults \cite{onCachingSearchEngineResults}
+% Investigates replacement policies.
+% Looks at static caching.
+% Locality is key.
 
-onCachingSerachEngineREsults \cite{onCachingSearchEngineResults}
-Investigates replacement policies.
-Looks at static caching.
-Locality is key.
-
-scalableConsistentCaching \cite{scalableConsistentCaching}
-Data Update Propagation system that maintains dependence information between cached objects and their underlying data.
-Uses graph traversals to do stuff.
-Cache fragments of HTML.
-Object dependence graph to represent dependencies.
-Prefetching pages -> generate new content immediately and replace cache on top so every page load is a cache hit.
-Use database triggers to update values used in caching.
+% scalableConsistentCaching \cite{scalableConsistentCaching}
+% Data Update Propagation system that maintains dependence information between cached objects and their underlying data.
+% Uses graph traversals to do stuff.
+% Cache fragments of HTML.
+% Object dependence graph to represent dependencies.
+% Prefetching pages -> generate new content immediately and replace cache on top so every page load is a cache hit.
+% Use database triggers to update values used in caching.
 
 %\end{multicols}
 
