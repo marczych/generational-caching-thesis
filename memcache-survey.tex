@@ -12,7 +12,7 @@ By Marc Zych \vspace{10pt} \\
 CSC 560: Grad Databases \vspace{10pt} \\
 Dr. Alexander Dekhtyar \vspace{10pt} \\
 }
-\date{October 9, 2012}
+\date{\today}
 
 \maketitle
 
@@ -28,16 +28,69 @@ Dr. Alexander Dekhtyar \vspace{10pt} \\
 %\newpage
 %\begin{multicols}{2}
 
-\section{Topic Description}
-A common method of scaling web applications is to use an in-memory cache that is shared between all web servers.
-One such system is \texttt{memcached}.
-This reduces server load and page response times by storing expensive calculations for later use.
-To make caching as useful as possible, improving the application's cache hit rate is paramount.
-What data is cached, how to determine the cache key, and how to handle updates are critical issues that directly affect the cache hit rate and how effective it is.
+\section{Related Work}
+triggerBasedORM \cite{triggerBasedORM}
+Proposes CacheGenie: a caching middleware which makes it easy for web application developers to use caching mechanisms in their applications.
+Developer doesn't worry about cache invalidation while writing application code.
+Uses memcached.
+Uses database triggers to update/invalidate cache.
+Various consistency schemes.
+Caching lists and incrementally updating contents.
 
-\section{Personal Interest}
-I'm interested inth is topic because it is essentially what I am doing for my thesis.
-I decided to do this for my thesis because I've run into these problems at work and haven't seen an elegant and optimal solution for this problem.
+sqlCached \cite{sqlCached}
+Didn't like Memcached so they wrote their own caching thing using sqllite.
+Specifically wanted rich querying and complex data.
+
+cacheInvalidationWebSearch \cite{cacheInvalidationWebSearch}
+Web search caching.
+Online cache invalidation.
+Query-driven cache invalidationf ramework - invalidation devision occurs on cache hit which avoids redundant invalidations.
+Use generation time of cached queries.
+Handles additions, updates, and deletions.
+
+refreshingPerspectiveSearch \cite{refreshingPerspectiveSearch}
+Eviction policies are not the issue because of the size of caches - freshness is.
+Use a TTL and let it expire - easy but not very good.
+Propose a strategy that refreshes caches, the time being dynamic - this is in addition to TTLs.
+
+cacheAdmissionPolicies \cite{cacheAdmissionPolicies}
+Proposes admission policies to prevent infrequent or even singleton queries from polluting the cache.
+Temporal locality.
+Singleton queries are single results that never occur again and increases cache misses because of evictions.
+Propose optimal admission policy over LRU that uses a heuristic to separate infrequent queries from frequent ones.
+Two stage cache - one for admission regulated queries and another for all other ones using LRU.
+Uses previous data to determine important ones.
+
+designTradOffs \cite{designTradeOffsSearchEngine}
+Studies trade-offs in static vs. dynamic caching, caching query results vs. caching posting lists.
+Correlates to the knapsack problem (optimal packing) for static cache.
+You know frequencies and sizes beforehand and can take a long time to come up with the best set to cache.
+
+keyBasedCacheExpiration \cite{keyBasedCacheExpiration}
+Generational caching - use last modified as part of the cache key so you don't ever have to explicitly delete anything.
+Automatically invalidates all of your caches.
+
+comparisonOfCachingSolutions \cite{comparisonOfCachingSolutions}
+Caching dynamic pages is difficult so do fragments of HTML instead.
+Proposes Dynamic Content Acceleration solution which does just that.
+Mentions observation-based invalidation.
+
+timestamp \cite{timestampCacheInvalidation}
+Include last updated timestamp for queries and predict when the data is stale.
+Predict when items are stale and update them accordingly.
+
+onCachingSerachEngineREsults \cite{onCachingSearchEngineResults}
+Investigates replacement policies.
+Looks at static caching.
+Locality is key.
+
+scalableConsistentCaching \cite{scalableConsistentCaching}
+Data Update Propagation system that maintains dependence information between cached objects and their underlying data.
+Uses graph traversals to do stuff.
+Cache fragments of HTML.
+Object dependence graph to represent dependencies.
+Prefetching pages -> generate new content immediately and replace cache on top so every page load is a cache hit.
+Use database triggers to update values used in caching.
 
 %\end{multicols}
 
