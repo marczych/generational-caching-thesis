@@ -34,18 +34,10 @@ All moderately sized websites experience these issues as their breadth of conten
 The ubiquitous solution to this problem is some form of caching.
 Although most web servers employ generous amounts of caching, the methods and approaches used vary widely.
 
-\subsection{What to cache}
-Some research has been done looking into what data is most efficiently cached.
-Many sources propose that fragments of HTML are the most useful data to cache.\cite{comparisonOfCachingSolutions}\cite{scalableConsistentCaching}
-A cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store.\cite{howBasecampGotSoFast}
+The remainder of this section is divided into different topics of research that revolve around improving the effectiveness of caching.
 
-One paper proposed that enforcing cache admission policies was a valuable way to improve hit ratio.\cite{cacheAdmissionPolicies}
-The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
-Detecting such queries and leaving them out of the cache leaves more room for frequently accessed queries thus increasing cache hit ratio.
-However, another paper claimed that the eviction policy doesn't have a significant impact on cache hit ratio.\cite{refreshingPerspectiveSearch}
-This is because caches can easily be expanded to hold more entries and therefore items rarely get evicted to begin with.\cite{refreshingPerspectiveSearch}
-
-\subsection{How to cache}
+\subsection{Incorporating Cache}
+\subsubsection{Caching Technologies}
 Most web application caching research revolves around caching strategies.
 It turns out that the underlying cache daemon is largely irrelevant.
 Memcached is by far the most popular web caching system; it is currently deployed by Facebook, Wikipedia, YouTube, and countless others.\cite{memcachedDotOrg}
@@ -61,7 +53,30 @@ These queries can be determined by analyzing historical data which would be diff
 In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined.\cite{designTradeOffsSearchEngine}
 Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches.\cite{cacheAdmissionPolicies}\cite{designTradeOffsSearchEngine}
 
-\subsection{How to handle freshness}
+\subsubsection{Implementing in an Application}
+Many approaches have been proposed for how to implement caching strategies in web application code.
+The most straight forward method is to explicitly get, set, and invalidate caches wherever they are needed in the application.
+However, this is tedious and error-prone.\cite{keyBasedCacheExpiration}\cite{triggerBasedORM}
+A preferrable alternative is to have caching built directly into the underlying application code.
+For example, Ruby on Rails provides a very rich data model that handles most of the caching details behind the scenes.\cite{keyBasedCacheExpiration}
+
+Another Object Relational Model (ORM) has been developed for the Django web framework that automatically handles all necessary caching operations which leaves the developer to write application code.\cite{triggerBasedORM}
+The project, CacheGenie, provides Python callbacks to database triggers that will be called when queries are run on the database. This allows the tool to update and/or invalidate caches depending on the queries.
+The major advantage of this approach is that no matter how the data is changed the cache remains consistent because cache invalidation occurs at the data layer.
+Other projects have used database triggers with similar results.\cite{scalableConsistentCaching}
+
+\subsection{Determining what to cache}
+Some research has been done looking into what data is most efficiently cached.
+Many sources propose that fragments of HTML are the most useful data to cache.\cite{comparisonOfCachingSolutions}\cite{scalableConsistentCaching}
+A cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store.\cite{howBasecampGotSoFast}
+
+One paper proposed that enforcing cache admission policies was a valuable way to improve hit ratio.\cite{cacheAdmissionPolicies}
+The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
+Detecting such queries and leaving them out of the cache leaves more room for frequently accessed queries thus increasing cache hit ratio.
+However, another paper claimed that the eviction policy doesn't have a significant impact on cache hit ratio.\cite{refreshingPerspectiveSearch}
+This is because caches can easily be expanded to hold more entries and therefore items rarely get evicted to begin with.\cite{refreshingPerspectiveSearch}
+
+\subsection{Cache Consistency}
 The most difficult problem regarding caches is ensuring consistency with the underlying persistent data store.
 The largest body of research for web caching focuses on search engines because of their monumental data set, request rate, and constantly changing data.
 
@@ -95,18 +110,6 @@ There has been research into least likely to be used (LLU) which is an optimal p
 % \subsection{Locality}
 % All computer caches work by exploiting spatial and temporal locality.
 % Research has been done looking into maximizing these traits for web application caching.\cite{onCachingSearchEngineResults}\cite{cacheAdmissionPolicies}
-
-\subsection{How to Implement}
-Many approaches have been proposed for how to implement caching strategies in web application code.
-The most straight forward method is to explicitly get, set, and invalidate caches wherever they are needed.
-However, this is tedious and error-prone.\cite{keyBasedCacheExpiration}\cite{triggerBasedORM}
-A preferrable alternative is to have caching built directly into the underlying application code.
-For example, Ruby on Rails provides a very rich data model that handles most of the caching details behind the scenes.\cite{keyBasedCacheExpiration}
-
-Another Object Relational Model (ORM) has been developed for the Django web framework that automatically handles all necessary caching operations which leaves the developer to write application code.\cite{triggerBasedORM}
-The project, CacheGenie, provides Python callbacks to database triggers that will be called when queries are run on the database. This allows the tool to update and/or invalidate caches depending on the queries.
-The major advantage of this approach is that no matter how the data is changed the cache remains consistent because cache invalidation occurs at the data layer.
-Other projects have used database triggers with similar results.\cite{scalableConsistentCaching}
 
 % \section{Summaries}
 % triggerBasedORM \cite{triggerBasedORM}
