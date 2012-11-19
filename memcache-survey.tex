@@ -36,75 +36,77 @@ Although most web servers employ generous amounts of caching, the methods and ap
 
 \subsection{What to cache}
 Some research has been done looking into what data is most efficiently cached.
-Many sources propose that fragments of HTML are the most useful data to cache. \cite{comparisonOfCachingSolutions} \cite{scalableConsistentCaching}
-Since HTML is ultimately sent to the user, for a cache hit the server avoids hitting the persistent store as well as skipping the HTML generation code. \cite{howBasecampGotSoFast}
+Many sources propose that fragments of HTML are the most useful data to cache.\cite{comparisonOfCachingSolutions}\cite{scalableConsistentCaching}
+A cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store.\cite{howBasecampGotSoFast}
 
-One paper proposed that enforcing cache admission policies was a valuable way to improve hit ratio. \cite{cacheAdmissionPolicies}
+One paper proposed that enforcing cache admission policies was a valuable way to improve hit ratio.\cite{cacheAdmissionPolicies}
 The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
 Detecting such queries and leaving them out of the cache leaves more room for frequently accessed queries thus increasing cache hit ratio.
-However, another paper suggested the opposite.
-That is eviction policies and cache expiration is not an issue because the size of caches are not an issue and can easily be expanded. \cite{refreshingPerspectiveSearch}
+However, another paper claimed that the eviction policy doesn't have a significant impact on cache hit ratio.\cite{refreshingPerspectiveSearch}
+This is because caches can easily be expanded to hold more entries and therefore items rarely get evicted to begin with.\cite{refreshingPerspectiveSearch}
 
 \subsection{How to cache}
 Most web application caching research revolves around caching strategies.
-The underlying cache daemon is largely irrelevant and can be used for most of the proposed solutions.
-Memcached is by far the most popular web caching system; it is currently deployed by Facebook, LiveJournal, and countless other websites.
+It turns out that the underlying cache daemon is largely irrelevant.
+Memcached is by far the most popular web caching system; it is currently deployed by Facebook, Wikipedia, YouTube, and countless others.\cite{memcachedDotOrg}
 
-The exception to this trend is a paper that proposes an alternative called SQLCached. \cite{sqlCached}
+The exception to this trend is a paper that proposes an alternative called SQLCached.\cite{sqlCached}
 This tool offers a few things that memcached doesn't: complex data types and rich querying for retrieval and invalidation.
-The system provided notable performance gains for the example workload.
-However, memcached is a more general purpose caching system that has many benefits including O(1) operations and inherently distributed nature.
+However, memcached is a more general purpose caching system that has many benefits including O(1) operations and inherently distributed nature.\cite{memcachedDotOrg}
 
-Static caches are only updated periodically and are not modified by the web application.
-Static caches are popular for search engines because a large amount of search queries' results return the same data for long amounts of time.
-Analysis of users' requests can be performed to determine the best way to use the static cache.
-In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined. \cite{designTradeOffsSearchEngine}
-Many papers propose a 2 or 3-level cache involving both a static and dynamic cache. \cite{cacheAdmissionPolicies} \cite{designTradeOffsSearchEngine}
+Memcached is an example of a dynamic cache daemon.
+There are also static caches that are only updated periodically and are not modified directly by the web application.
+Static caches are popular for search engines because a large number of search queries' return the same data for long amounts of time.
+These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache.\cite{designTradeOffsSearchEngine}
+In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined.\cite{designTradeOffsSearchEngine}
+Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches.\cite{cacheAdmissionPolicies}\cite{designTradeOffsSearchEngine}
 
 \subsection{How to handle freshness}
 The most difficult problem regarding caches is ensuring consistency with the underlying persistent data store.
-The largest body of research for web caching focuses on search engines because of their monumental data set, request rate and constantly changing data.
+The largest body of research for web caching focuses on search engines because of their monumental data set, request rate, and constantly changing data.
 
 \subsubsection{Timestamps}
-One paper proposed a system that does not invalidate caches but rather determines cache freshness upon cache hit. \cite{cacheInvalidationWebSearch}
+One paper proposed a system that does not invalidate caches but rather determines cache freshness upon cache hit.\cite{cacheInvalidationWebSearch}
 This is done by including a timestamp corresponding to the generation time in the cached object.
 Upon cache hit the timestamp is compared against a query index that is updated as the underlying data is updated.
 
-37Signals employs a technique called key based cache expiration. \cite{keyBasedCacheExpiration}
-The idea is that a timestamp corresponding to the last time the object was updated is included in the keys for any caches.
+Another caching technique is referred to as key based cache expiration\cite{keyBasedCacheExpiration} or generational caching\cite{generationalCaching}.
+The idea is that a timestamp corresponding to the last time the object was updated is included in the key for any caches that depend on it.
 The timestamp is updated once the object is modified thus invalidating all necessary keys.
 This approach also updates the timestamps of any objects that depend on the modified object.
-
-\subsubsection{Expiration times}
-Another paper exploits the cache expiration time to invalidate caches. \cite{refreshingPerspectiveSearch}
-The idea was that serving slightly stale data isn't terrible for search engines.
-Additionally, the rate of change can be determined for a given query.
-This value can then be used to set the expiration time allowing more frequently changing data to have a shorter time to live and infrequently changing data will have a longer time to live.
+This technique is employed by 37Signals and various other websites.\cite{keyBasedCacheExpiration}
 
 \subsubsection{Dependency graph}
-One paper describes a system that constructs a dependency graph that is used when invalidating caches. \cite{scalableConsistentCaching}
-For example, if one event occurs then multiple caches may need to be invalidated based on the generated graph.
+One paper describes a system that constructs a dependency graph that is used when invalidating caches.\cite{scalableConsistentCaching}
+When an object is updated all of the caches that have an edge with that object are invalidated along with the original object.
+This approach is similar to using timestamps in that the objects whose timestamps are updated when another object is updated represent an edge in a dependency graph.
+
+\subsubsection{Expiration times}
+Another paper exploits the cache expiration time to invalidate caches.\cite{refreshingPerspectiveSearch}
+The idea is that serving slightly stale data isn't terrible for search engines.
+Additionally, the rate of change can be determined for a given query and can be factored into the expiration time.
+This allows frequently changing data to have a shorter time to live and infrequently changing data to have a longer time to live.
 
 \subsection{Eviction Policies}
 Despite what \cite{refreshingPerspectiveSearch} claims, research has been done investigating eviction policies.
 Least recently used (LRU) is a commonly used eviction policy from operating systems to CPU caches to dynamic web data.
 There has been research into least likely to be used (LLU) which is an optimal policy that can be approximated by various techniques.
 
-\subsection{Locality}
-All computer caches work by exploiting spatial and temporal locality.
-Research has been done looking into maximizing these traits for web application caching. \cite{onCachingSearchEngineResults} \cite{cacheAdmissionPolicies}
+% \subsection{Locality}
+% All computer caches work by exploiting spatial and temporal locality.
+% Research has been done looking into maximizing these traits for web application caching.\cite{onCachingSearchEngineResults}\cite{cacheAdmissionPolicies}
 
 \subsection{How to Implement}
 Many approaches have been proposed for how to implement caching strategies in web application code.
 The most straight forward method is to explicitly get, set, and invalidate caches wherever they are needed.
-However, this is tedious and error-prone. \cite{keyBasedCacheExpiration} \cite{triggerBasedORM}
+However, this is tedious and error-prone.\cite{keyBasedCacheExpiration}\cite{triggerBasedORM}
 A preferrable alternative is to have caching built directly into the underlying application code.
-Ruby on Rails provides a very rich data model that handles most of the caching details behind the scenes. \cite{keyBasedCacheExpiration}
+For example, Ruby on Rails provides a very rich data model that handles most of the caching details behind the scenes.\cite{keyBasedCacheExpiration}
 
-Another Object Relational Model (ORM) has been developed for the Django web framework that automatically handles all necessary caching operations which leaves the developer to write application code. \cite{triggerBasedORM}
+Another Object Relational Model (ORM) has been developed for the Django web framework that automatically handles all necessary caching operations which leaves the developer to write application code.\cite{triggerBasedORM}
 The project, CacheGenie, provides Python callbacks to database triggers that will be called when queries are run on the database. This allows the tool to update and/or invalidate caches depending on the queries.
-The major advantage of this approach is that no matter how the data is changed (even through raw SQL queries from a remote host) the cache remains consistent.
-Other projects have used database triggers with similar results. \cite{scalableConsistentCaching}
+The major advantage of this approach is that no matter how the data is changed the cache remains consistent because cache invalidation occurs at the data layer.
+Other projects have used database triggers with similar results.\cite{scalableConsistentCaching}
 
 % \section{Summaries}
 % triggerBasedORM \cite{triggerBasedORM}
