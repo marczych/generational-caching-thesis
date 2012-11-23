@@ -223,12 +223,17 @@ Measuring this will be a very subjective matter.
 \subsection{Experimental Setup}
 Developing an experiment to get consistent results is crucial.
 I am planning on recording all site traffic during a period of time and replaying it during the experiments.
-This removes any variables from the amount and type of site traffic that occurs naturally.
-Results should be very close to each other for the same experiment which demonstrates the validity of the testing environment.
+This ensures that the workload will be the same across all tests.
+
 First an unaltered log of site traffic will be replayed on both systems to emulate real world traffic patterns.
-Additionally, this log will be extrapolated to simulate increased site traffic.
+Next this log will be extrapolated to simulate increased site traffic.
 Multiple levels of increased site traffic will be run on both systems as a comparison of their merits of scalability.
-This method will yield an approximate value for requests per second that each system can handle.
+Scalability tests can be split into two separate groups: general traffic and targetted traffic.
+General traffic isn't targetted to any specific pages; requests to all pages are uniformly increased.
+This is similar to increasing a site's general popularity.
+Targetted traffic on the other hand has increased traffic to a small subset of content.
+This simulates special events such as press and social media where a page goes viral for a short amount of time.
+Both types of traffic are realistic and are useful measures for the effectiveness of caching strategies.
 
 The contents of the database and memcached must be the same at the start of the experiments.
 The contents of memcached can be flushed to ensure a consistent repeatable experiment.
@@ -239,8 +244,8 @@ Ensuring the database is in a consistent state is a more difficult matter.
 Simply performing a dump of the database won't work because of how long it takes to do so.
 Instead, a slave database can be set up to be replicated from the master database.
 The instant site traffic starts being recorded the slave will stop replication and the dump will be performed on the slave database.
-The contents of the database will be populated with this dump to ensure a similar experiment.
-The only problem with this approach is that populating a database from a sql dump may take a significant amount of tme depending on the size of the data.
+The contents of the test database will be populated with this dump to guarantee a repeatable experiment.
+The only problem with this approach is that populating a database from a MySQL dump may take a significant amount of tme depending on the size of the data.
 This will merely increase the time between tests.
 
 All experiments will be run on a duplicate set of machines that mirror the architecture that is used in production.
