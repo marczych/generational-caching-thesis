@@ -199,14 +199,28 @@ There has been research into least likely to be used (LLU) which is an optimal p
 %\end{multicols}
 
 \section{Validation}
+\subsection{General Approach}
 Validating my work is a fairly straightforward process.
-The basic approach will involve gathering various statistics with and without my approach.
+The basic approach will involve gathering various statistics with and without my approach during an experiment based on a repeatable set of input data. %TODO: This sentence kinda sucks.
+
+\subsection{Measured Values}
 Some values that should be increased include cache hit rate and requests per second.
 Some values that should be decreased include server load and page response time.
 However, merely comparing the two sets of data will not be an accurate picture of the situation.
 For example, cache hit rate may be increased as well as server load.
 This could be the result of an optimistic prefetching algorithm that caches values before they are requested in the event that they will be requested soon.
+The pivotal question is regarding whether or not the increased server load is worth the increased hit rate.
 
+Other criteria, such as ease of use and cache freshness, are harder to measure and validate.
+Cache freshness involves measuring how long a stale cache is served after there is a fresh version available.
+In particular, some amount of cache staleness is acceptable but the line is blurred especially in the presence of performance gains.
+
+Ease of use is even more difficult to measure.
+A caching mechanism that requires a diligent programmer to carefully hand craft the caching algorithm with every feature added is not very easy to use.
+On the other hand, a caching mechanism that operates behind the scenes without the programmer's knowledge is very easy to use.
+Measuring this will be a very subjective matter.
+
+\subsection{Experimental Setup}
 Developing an experiment to get consistent results is crucial.
 I am planning on recording all site traffic during a period of time and replaying it during the experiments.
 This removes any variables from the amount and type of site traffic that occurs naturally.
@@ -215,6 +229,19 @@ First an unaltered log of site traffic will be replayed on both systems to emula
 Additionally, this log will be extrapolated to simulate increased site traffic.
 Multiple levels of increased site traffic will be run on both systems as a comparison of their merits of scalability.
 This method will yield an approximate value for requests per second that each system can handle.
+
+The contents of the database and memcached must be the same at the start of the experiments.
+The contents of memcached can be flushed to ensure a consistent repeatable experiment.
+However, this setup isn't very realistic because the contents of cache is never completely empty in production and may skew results depending on differences in the caching algorithms.
+To mitigate this issue, experiments can be run for a period of time before statistics are collected to make the contents of cache more realistic.
+
+Ensuring the database is in a consistent state is a more difficult matter.
+Simply performing a dump of the database won't work because of how long it takes to do so.
+Instead, a slave database can be set up to be replicated from the master database.
+The instant site traffic starts being recorded the slave will stop replication and the dump will be performed on the slave database.
+The contents of the database will be populated with this dump to ensure a similar experiment.
+The only problem with this approach is that populating a database from a sql dump may take a significant amount of tme depending on the size of the data.
+This will merely increase the time between tests.
 
 All experiments will be run on a duplicate set of machines that mirror the architecture that is used in production.
 This ensures that the results gathered will be consistent with how they will perform in production.
