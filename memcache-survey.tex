@@ -198,6 +198,27 @@ There has been research into least likely to be used (LLU) which is an optimal p
 
 %\end{multicols}
 
+\section{Validation}
+Validating my work is a fairly straightforward process.
+The basic approach will involve gathering various statistics with and without my approach.
+Some values that should be increased include cache hit rate and requests per second.
+Some values that should be decreased include server load and page response time.
+However, merely comparing the two sets of data will not be an accurate picture of the situation.
+For example, cache hit rate may be increased as well as server load.
+This could be the result of an optimistic prefetching algorithm that caches values before they are requested in the event that they will be requested soon.
+
+Developing an experiment to get consistent results is crucial.
+I am planning on recording all site traffic during a period of time and replaying it during the experiments.
+This removes any variables from the amount and type of site traffic that occurs naturally.
+Results should be very close to each other for the same experiment which demonstrates the validity of the testing environment.
+First an unaltered log of site traffic will be replayed on both systems to emulate real world traffic patterns.
+Additionally, this log will be extrapolated to simulate increased site traffic.
+Multiple levels of increased site traffic will be run on both systems as a comparison of their merits of scalability.
+This method will yield an approximate value for requests per second that each system can handle.
+
+All experiments will be run on a duplicate set of machines that mirror the architecture that is used in production.
+This ensures that the results gathered will be consistent with how they will perform in production.
+
 \newpage
 \nocite{*}
 \bibliographystyle{IEEEannot}
