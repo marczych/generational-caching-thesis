@@ -127,77 +127,6 @@ Despite what \cite{refreshingPerspectiveSearch} claims, research has been done i
 Least recently used (LRU) is a commonly used eviction policy from operating systems to CPU caches to dynamic web data.
 There has been research into least likely to be used (LLU) which is an optimal policy that can be approximated by various techniques.
 
-% \subsection{Locality}
-% All computer caches work by exploiting spatial and temporal locality.
-% Research has been done looking into maximizing these traits for web application caching.\cite{onCachingSearchEngineResults}\cite{cacheAdmissionPolicies}
-
-% \section{Summaries}
-% triggerBasedORM \cite{triggerBasedORM}
-% Proposes CacheGenie: a caching middleware which makes it easy for web application developers to use caching mechanisms in their applications.
-% Developer doesn't worry about cache invalidation while writing application code.
-% Uses memcached.
-% Uses database triggers to update/invalidate cache.
-% Various consistency schemes.
-% Caching lists and incrementally updating contents.
-
-% sqlCached \cite{sqlCached}
-% Didn't like Memcached so they wrote their own caching thing using sqllite.
-% Specifically wanted rich querying and complex data.
-
-% cacheInvalidationWebSearch \cite{cacheInvalidationWebSearch}
-% Web search caching.
-% Online cache invalidation.
-% Query-driven cache invalidationf ramework - invalidation devision occurs on cache hit which avoids redundant invalidations.
-% Use generation time of cached queries.
-% Handles additions, updates, and deletions.
-
-% refreshingPerspectiveSearch \cite{refreshingPerspectiveSearch}
-% Eviction policies are not the issue because of the size of caches - freshness is.
-% Use a TTL and let it expire - easy but not very good.
-% Propose a strategy that refreshes caches, the time being dynamic - this is in addition to TTLs.
-
-% cacheAdmissionPolicies \cite{cacheAdmissionPolicies}
-% Proposes admission policies to prevent infrequent or even singleton queries from polluting the cache.
-% Temporal locality.
-% Singleton queries are single results that never occur again and increases cache misses because of evictions.
-% Propose optimal admission policy over LRU that uses a heuristic to separate infrequent queries from frequent ones.
-% Two stage cache - one for admission regulated queries and another for all other ones using LRU.
-% Uses previous data to determine important ones.
-
-% designTradOffs \cite{designTradeOffsSearchEngine}
-% Studies trade-offs in static vs. dynamic caching, caching query results vs. caching posting lists.
-% Correlates to the knapsack problem (optimal packing) for static cache.
-% You know frequencies and sizes beforehand and can take a long time to come up with the best set to cache.
-
-% keyBasedCacheExpiration \cite{keyBasedCacheExpiration}
-% Generational caching - use last modified as part of the cache key so you don't ever have to explicitly delete anything.
-% Automatically invalidates all of your caches.
-
-% comparisonOfCachingSolutions \cite{comparisonOfCachingSolutions}
-% Caching dynamic pages is difficult so do fragments of HTML instead.
-% Proposes Dynamic Content Acceleration solution which does just that.
-% Mentions observation-based invalidation.
-
-% timestamp \cite{timestampCacheInvalidation}
-% Include last updated timestamp for queries and predict when the data is stale.
-% Predict when items are stale and update them accordingly.
-
-% onCachingSerachEngineREsults \cite{onCachingSearchEngineResults}
-% Investigates replacement policies.
-% Looks at static caching.
-% Locality is key.
-
-% scalableConsistentCaching \cite{scalableConsistentCaching}
-% Data Update Propagation system that maintains dependence information between cached objects and their underlying data.
-% Uses graph traversals to do stuff.
-% Cache fragments of HTML.
-% Object dependence graph to represent dependencies.
-% Prefetching pages -> generate new content immediately and replace cache on top so every page load is a cache hit.
-% Use database triggers to update values used in caching.
-% Avoid cache stampedes by prefetching and updating caches in place (don't invalidate).
-
-%\end{multicols}
-
 \section{Validation}
 \subsection{General Approach}
 Validating my work is a fairly straightforward process.
@@ -250,6 +179,8 @@ This will merely increase the time between tests.
 
 All experiments will be run on a duplicate set of machines that mirror the architecture that is used in production.
 This ensures that the results gathered will be consistent with how they will perform in production.
+
+%\end{multicols}
 
 \newpage
 \nocite{*}
