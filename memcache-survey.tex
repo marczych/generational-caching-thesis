@@ -1,34 +1,117 @@
-\documentclass[12pt]{article}
 
-\usepackage{ulem}
-\usepackage{multicol}
+% Cal Poly Thesis
+% 
+% based on UC Thesis format
+%
+% modified by Mark Barry 2/07.
+%
+
+
+\documentclass[12pt]{ucthesis}
+
+\usepackage{url}
+
+\usepackage[pdftex]{graphicx}
+% Update title and author below...
+\usepackage[pdftex,plainpages=false,breaklinks=true,colorlinks=true,urlcolor=blue,citecolor=blue,%
+                                   linkcolor=blue,bookmarks=true,bookmarksopen=true,%
+                                   bookmarksopenlevel=3,pdfstartview=FitV,
+                                   pdfauthor={!!Author goes here!!},
+                                   pdftitle={!!Title goes here!!},
+                                   pdfkeywords={thesis, masters, cal poly}
+                                   ]{hyperref}
+%Options with pdfstartview are FitV, FitB and FitH
+\pdfcompresslevel=1
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage[letterpaper]{geometry}
+\usepackage[overload]{textcase}
+
+\bibliographystyle{abbrv}
+
+\setlength{\parindent}{0.25in} \setlength{\parskip}{6pt}
+
+\geometry{verbose,nohead,tmargin=1.25in,bmargin=1in,lmargin=1.5in,rmargin=1.3in}
+
+\setcounter{tocdepth}{2}
+
+
+% Different font in captions (single-spaced, bold) ------------
+\newcommand{\captionfonts}{\small\bf\ssp}
+
+\makeatletter  % Allow the use of @ in command names
+\long\def\@makecaption#1#2{%
+  \vskip\abovecaptionskip
+  \sbox\@tempboxa{{\captionfonts #1: #2}}%
+  \ifdim \wd\@tempboxa >\hsize
+    {\captionfonts #1: #2\par}
+  \else
+    \hbox to\hsize{\hfil\box\@tempboxa\hfil}%
+  \fi
+  \vskip\belowcaptionskip}
+\makeatother   % Cancel the effect of \makeatletter
+% ---------------------------------------
+
+
+
 
 \begin{document}
 
-\title{\vfill Survey Paper Proposal: Web Application Caching}
+% Declarations for Front Matter
 
-\author{
-By Marc Zych \vspace{10pt} \\
-CSC 560: Grad Databases \vspace{10pt} \\
-Dr. Alexander Dekhtyar \vspace{10pt} \\
-}
-\date{\today}
+%TODO Update fields below!
+\title{This is the Title of My Thesis}
+\author{Marc Zych}
+\degreemonth{February} \degreeyear{2009} \degree{Master of Science}
+\defensemonth{February} \defenseyear{2009}
+\numberofmembers{3} \chair{Zo\"{e} Wood, Ph.D.} \othermemberA{Chris Clark, Ph.D.} \othermemberB{Chris Buckalew, Ph.D.} \field{Computer Science} \campus{San Luis Obispo}
+\copyrightyears{seven}
+
+
 
 \maketitle
 
-% \begin{abstract}
-% Stuff
-% \end{abstract}
+\begin{frontmatter}
 
-\thispagestyle{empty}
-\newpage
+% Custom made for Cal Poly (by Mark Barry, modified by Andrew Tsui).
+\copyrightpage
 
-%\tableofcontents
+% Custom made for Cal Poly (by Andrew Tsui).
+\committeemembershippage
 
-%\newpage
-%\begin{multicols}{2}
+\begin{abstract}
 
-\section{Related Work}
+Caching is hard. I'm going to make it better.
+
+\end{abstract}
+
+
+\tableofcontents
+
+
+\listoftables
+
+\listoffigures
+
+\end{frontmatter}
+
+\pagestyle{plain}
+
+
+
+
+\renewcommand{\baselinestretch}{1.66}
+
+
+\chapter{Introduction}
+\label{intro}
+
+This is my introduction.
+
+\chapter{Related Work}
+\label{previous-work}
+
 Web scalability has been an issue for web sites since the dot-com boom of the late nineties.
 All moderately sized websites experience these issues as their breadth of content as well as the number of active users grow.
 The ubiquitous solution to this problem is some form of caching.
@@ -127,7 +210,9 @@ Despite what \cite{refreshingPerspectiveSearch} claims, research has been done i
 Least recently used (LRU) is a commonly used eviction policy from operating systems to CPU caches to dynamic web data.
 There has been research into least likely to be used (LLU) which is an optimal policy that can be approximated by various techniques.
 
-\section{Validation}
+\chapter{Validation}
+\label{validation}
+
 \subsection{General Approach}
 Validating my work is a fairly straightforward process.
 The basic approach will involve gathering various statistics with and without my approach during an experiment based on a repeatable set of input data. %TODO: This sentence kinda sucks.
@@ -180,10 +265,12 @@ This will merely increase the time between tests.
 All experiments will be run on a duplicate set of machines that mirror the architecture that is used in production.
 This ensures that the results gathered will be consistent with how they will perform in production.
 
-%\end{multicols}
 
-\newpage
-\nocite{*}
-\bibliographystyle{IEEEannot}
+% ------------- End main chapters ----------------------
+
+\clearpage
 \bibliography{memcache-survey}
+\bibliographystyle{plain}
+%\addcontentsline{toc}{chapter}{Bibliography}
+
 \end{document}
