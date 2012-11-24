@@ -66,3 +66,7 @@ Object dependence graph to represent dependencies.
 Prefetching pages -> generate new content immediately and replace cache on top so every page load is a cache hit.
 Use database triggers to update values used in caching.
 Avoid cache stampedes by prefetching and updating caches in place (don't invalidate).
+
+cachingdynamicWebContent \cite{cachingDynamicWebContent}
+Fine grained invalidation is essential
+Parse SQL queries to invalidate caches
