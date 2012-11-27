@@ -131,7 +131,7 @@ However, memcached is a more general purpose caching system that has many benefi
 
 Memcached is an example of a dynamic cache daemon.
 There are also static caches that are only updated periodically and are not modified directly by the web application.
-Static caches are popular for search engines because a large number of search queries' return the same data for long amounts of time.
+Static caches are popular for search engines because a large number of search queries return the same data for long periods of time.
 These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache.\cite{designTradeOffsSearchEngine}
 In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined.\cite{designTradeOffsSearchEngine}
 Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches.\cite{cacheAdmissionPolicies}\cite{designTradeOffsSearchEngine}
