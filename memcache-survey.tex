@@ -5,7 +5,7 @@
 
 \begin{document}
 
-\title{\vfill Survey Paper Proposal: Web Application Caching}
+\title{\vfill Survey Paper: Web Application Caching}
 
 \author{
 By Marc Zych \vspace{10pt} \\
@@ -28,13 +28,32 @@ Dr. Alexander Dekhtyar \vspace{10pt} \\
 %\newpage
 %\begin{multicols}{2}
 
-\section{Related Work}
+\section{Introduction}
 Web scalability has been an issue for web sites since the dot-com boom of the late nineties.
 All moderately sized websites experience these issues as their breadth of content as well as the number of active users grow.
 The ubiquitous solution to this problem is some form of caching.
 Although most web servers employ generous amounts of caching, the methods and approaches used vary widely.
+This survey focuses on caching strategies in web application code aimed to reduce database load and decrease page response time.
 
-The remainder of this section is divided into different topics of research that revolve around improving the effectiveness of caching.
+% TODO Add broader background to related fields?
+% Database level caching
+% Web proxy caching
+
+Remainder of this paper is as follows. %TODO
+
+\section{Terminology}
+Cache
+Cache hit/miss
+Static cache
+Dynamic cache
+Eviction policy
+Expire
+Cache consistency/coherence/invalidation
+Cache stampede
+
+\section{Research Challenges}
+Cache invalidation is difficult.
+Core area of research is search engines.
 
 \subsection{Incorporating Cache}
 \subsubsection{Caching Technologies}
