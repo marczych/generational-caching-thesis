@@ -47,7 +47,7 @@ At a high level a cache is used to store results of operations so future request
 A cache is typically not the primary storage location for data.
 In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
 A cache hit occurs when the data that is being requested is in the cache and no further action is required.
-A cache miss occurs when the data that is being requested is not in the cache and it must be retrieved from the permanent backing store.
+A cache miss occurs when the data that is being requested is not in the cache and it must be retrieved from elsewhere.
 
 Caching is effective because retrieving data from the cache is much faster than retrieving it from its persistent location.
 Additionally, caching exploits locality.
@@ -56,8 +56,7 @@ Spatial locality is the idea that an item that is next to an item getting reques
 Traditionally this meant physically next to the object such as in neighboring memory locations.
 However, for web sites it has been broadened to include things like recommended content.
 
-Caches are typically fairly small in comparison to other persistent stores.
-Caches come in two main flavors: static and dynamic. %TODO This sentence sucks.
+Caches can be of the static or dynamic type.
 A static cache is one that is not updated as a result of the application running.
 The application can request data from the cache but it cannot add, modify, or remove cache entries.
 However, the cache is updated periodically to keep it up to date.
@@ -69,7 +68,7 @@ Dynamic caches have a limited size and may eventually fill to capacity
 When this occurs items must be removed to make room for new ones.
 The eviction policy determines which cache entries are removed.
 Some caches allow entries to be set with an expire time.
-After the specified time has passed the entry is expired and will no longer be returned by the cache.
+After the specified time has passed the entry is expired and is no longer a valid cache entry.
 
 Cache coherence, also referred to as cache consistency, is the concept of keeping the data in the cache consistent with the data stored in the primary backing store.
 One such method is to perform cache invalidation which removes items from the cache.
@@ -90,8 +89,6 @@ Another research challenge is how to make the caching system easy to use for dev
 The problem is that manually controlling the cache is tedious and error-prone.
 The idea is that this can be remedied by putting in place a system that transparently handles all caching operations which leaves the developer to write the more meaningful code.
 
-Core area of research is search engines. %TODO Add this or not?
-
 \section{Incorporating Cache}
 \subsection{Caching Technologies}
 Most web application caching research revolves around caching strategies.
@@ -100,13 +97,13 @@ Memcached is by far the most popular web caching system; it is currently deploye
 
 The exception to this trend is a paper that proposes an alternative called SQLCached.\cite{sqlCached}
 This tool offers a few things that memcached doesn't: complex data types and rich querying for retrieval and invalidation.
-However, memcached is a more general purpose caching system that has many benefits including O(1) operations and inherently distributed nature.\cite{memcachedDotOrg}
+This is possible because SQLCached uses SQLite as its caching mechanism.
+However, memcached is a more general purpose caching system that has many benefits including constant time ({\tt O(1)}) operations and inherently distributed nature.\cite{memcachedDotOrg}
 
-% TODO Put this somewhere?
-% Static caches are popular for search engines because a large number of search queries' return the same data for long amounts of time.
-% These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache.\cite{designTradeOffsSearchEngine}
-% In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined.\cite{designTradeOffsSearchEngine}
-% Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches.\cite{cacheAdmissionPolicies}\cite{designTradeOffsSearchEngine}
+Static caches are popular for search engines because a large number of search queries' return the same data for long amounts of time.
+These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache.\cite{designTradeOffsSearchEngine}
+In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined.\cite{designTradeOffsSearchEngine}
+Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches.\cite{cacheAdmissionPolicies}\cite{designTradeOffsSearchEngine}
 
 \subsection{Implementing in an Application}
 Many approaches have been proposed for how to implement caching strategies in web application code.
@@ -176,7 +173,13 @@ Least recently used (LRU) is a commonly used eviction policy.
 There has been research into least likely to be used (LLU) which is an optimal policy that can be approximated by various techniques.
 
 \section{Conclusion}
-Conclude!
+This paper has given a survey of caching methods used in web application code.
+As you can see, different strategies work well for different types of data.
+For example, write-through caching is very effective for simple data types.
+More complex data, however, requires a caching strategy that can handle dependencies between objects.
+
+There is still room for more research in this field.
+In particular, an empirical study that determines the trade-offs between large and fine-grained caching would be a worthwhile contribution.
 
 % \subsection{Locality}
 % All computer caches work by exploiting spatial and temporal locality.
