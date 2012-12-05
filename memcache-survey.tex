@@ -32,14 +32,15 @@ Dr. Alexander Dekhtyar \vspace{10pt} \\
 Web scalability has been an issue for web sites since the dot-com boom of the late nineties.
 All moderately sized websites experience these issues as their breadth of content as well as the number of active users grow.
 The ubiquitous solution to this problem is some form of caching.
+
 Although most web servers employ generous amounts of caching, the methods and approaches used vary widely.
-This survey focuses on caching strategies in web application code aimed to reduce database load and decrease page response time.
+Client side browser caching is popular because it avoids a large amount of network overhead.
+This is typically done by determining whether or not the content has changed since it was last requested.
+Proxy caching is very similar to browser caching except that it happens at proxy servers located in between the client and the primary host server.
+This survey, however, focuses on caching strategies and techniques in web application code that are aimed to reduce database load and decrease page response time.
 
-% TODO Add broader background to related fields?
-% Database level caching
-% Web proxy caching
-
-Remainder of this paper is as follows. %TODO
+The remainder of this paper is structured as follows.
+Section 2 introduces caching terminology, section 3 describes various challenges that caching research focusses on, sections 4, 5, and 6 explain in detail the content of the papers surveyed, and finally section 7 concludes.
 
 \section{Terminology}
 This section defines some of the terminology used in the field of caching and the remainder of this paper.
@@ -121,17 +122,6 @@ The project, CacheGenie, provides Python callbacks to database triggers that wil
 The major advantage of this approach is that no matter how the data is changed the cache remains consistent because cache invalidation occurs at the data layer.
 Other projects have used database triggers with similar results.\cite{scalableConsistentCaching}
 
-\section{Determining what to cache}
-Some research has been done looking into what data is most efficiently cached.
-Many sources propose that fragments of HTML are the most useful data to cache.\cite{comparisonOfCachingSolutions}\cite{scalableConsistentCaching}
-A cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store.\cite{howBasecampGotSoFast}
-
-One paper proposed that enforcing cache admission policies was a valuable way to improve hit ratio.\cite{cacheAdmissionPolicies}
-The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
-Detecting such queries and leaving them out of the cache leaves more room for frequently accessed queries thus increasing cache hit ratio.
-However, another paper claimed that the eviction policy doesn't have a significant impact on cache hit ratio.\cite{refreshingPerspectiveSearch}
-This is because caches can easily be expanded to hold more entries and therefore items rarely get evicted to begin with.\cite{refreshingPerspectiveSearch}
-
 \section{Cache Consistency}
 The most difficult problem regarding caches is ensuring consistency with the underlying persistent data store.
 The largest body of research for web caching focuses on search engines because of their monumental data set, request rate, and constantly changing data.
@@ -178,10 +168,24 @@ The idea is that serving slightly stale data isn't terrible for search engines.
 Additionally, the rate of change can be determined for a given query and can be factored into the expiration time.
 This allows frequently changing data to have a shorter time to live and infrequently changing data to have a longer time to live.
 
-\section{Eviction Policies}
+\section{Determining what to cache}
+Some research has been done looking into what data is most efficiently cached.
+Many sources propose that fragments of HTML are the most useful data to cache.\cite{comparisonOfCachingSolutions}\cite{scalableConsistentCaching}
+A cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store.\cite{howBasecampGotSoFast}
+
+One paper proposed that enforcing cache admission policies was a valuable way to improve hit ratio.\cite{cacheAdmissionPolicies}
+The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
+Detecting such queries and leaving them out of the cache leaves more room for frequently accessed queries thus increasing cache hit ratio.
+However, another paper claimed that the eviction policy doesn't have a significant impact on cache hit ratio.\cite{refreshingPerspectiveSearch}
+This is because caches can easily be expanded to hold more entries and therefore items rarely get evicted to begin with.\cite{refreshingPerspectiveSearch}
+
+\subsection{Eviction Policies}
 Despite what \cite{refreshingPerspectiveSearch} claims, research has been done investigating eviction policies.
 Least recently used (LRU) is a commonly used eviction policy from operating systems to CPU caches to dynamic web data.
 There has been research into least likely to be used (LLU) which is an optimal policy that can be approximated by various techniques.
+
+\section{Conclusion}
+Conclude!
 
 % \subsection{Locality}
 % All computer caches work by exploiting spatial and temporal locality.
