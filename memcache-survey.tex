@@ -42,14 +42,34 @@ This survey focuses on caching strategies in web application code aimed to reduc
 Remainder of this paper is as follows. %TODO
 
 \section{Terminology}
-Cache
-Cache hit/miss
-Static cache
-Dynamic cache
-Eviction policy
-Expire
-Cache consistency/coherence/invalidation
-Cache stampede
+This section defines some of the terminology used in the field of caching and the remainder of this paper.
+At a high level a cache is used to store results of operations so future requests can be served faster.
+A cache is typically not the primary storage location for data.
+In most cases there is a permanent backing store such as a database.
+A cache hit occurs when the data that is being requested is in the cache and no further action is required to retrieve the data.
+A cache miss occurs when the data that is being requested is not in the cache and it must be retrieved from the permanent backing store.
+Caching is effective because retrieving data from the cache is much faster than retrieving it from its persistent location.
+
+Caches are typically fairly small in comparison to other persistent stores.
+Caches come in two main flavors: static and dynamic. %TODO This sentence sucks.
+A static cache is one that is not updated as a result of the application running.
+The application can request data from the cache but it cannot add, modify, or remove cache entries.
+However, the cache is updated periodically to keep it up to date.
+The timeframe for this differs from application to application but is largely a function of how often the underlying data changes.
+In contrast, a dynamic cache is one that can be updated as a result of the application execution.
+The application can freely add, modify, and remove cache entries based on the operations it is performing.
+
+Dynamic caches have a limited size and may eventually fill to capacity
+When this occurs items must be removed to make room for new ones.
+The eviction policy determines which cache entries are removed.
+Cache entries can also be set with an expire time.
+After the specified time has passed the entry is expired and will no longer be returned by the cache.
+
+Cache coherence, also referred to as cache consistency, is the concept of keeping the data in the cache consistent with the data stored in the primary backing store.
+One such method is to perform cache invalidation which removes items from the cache.
+A cache stampede can occur when a cache that is frequently requested is invalidated.
+There are then a series of cache misses followed by a series of duplicated requests to the backing store followed by a series of cache sets.
+These should be avoided if possible because of the redundant work done by each request.
 
 \section{Research Challenges}
 Cache invalidation is difficult.
