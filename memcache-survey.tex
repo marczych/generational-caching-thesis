@@ -78,8 +78,19 @@ There are then a series of cache misses followed by a series of duplicated reque
 These should be avoided if possible because of the redundant work done by each request.
 
 \section{Research Challenges}
-Cache invalidation is difficult.
-Core area of research is search engines.
+Most research is focussed on addressing two core challenges with caching.
+The first of which is cache coherency.
+In some cases maintaining cache coherency is trivial because there is only one cache associated with the underlying data.
+However, with more complex data the situation is much more difficult.
+There may be dependencies between objects which means that multiple caches need to be invalidated at the same time.
+To further complicate things the dependencies between objects may be dynamic and must be resolved at run time on a per object basis.
+This is very common for Web 2.0 sites that are driven by user generated content.
+
+Another research challenge is how to make the caching system easy to use for developers.
+The problem is that manually controlling the cache is tedious and error-prone.
+The idea is that this can be remedied by putting in place a system that transparently handles all caching operations which leaves the developer to write the more meaningful code.
+
+Core area of research is search engines. %TODO Add this or not?
 
 \subsection{Incorporating Cache}
 \subsubsection{Caching Technologies}
