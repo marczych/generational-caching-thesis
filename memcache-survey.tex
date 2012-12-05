@@ -20,6 +20,8 @@ Dr. Alexander Dekhtyar \vspace{10pt} \\
 % Stuff
 % \end{abstract}
 
+\vfill
+
 \thispagestyle{empty}
 \newpage
 
@@ -40,7 +42,7 @@ Proxy caching is very similar to browser caching except that it happens at proxy
 This survey, however, focuses on caching strategies and techniques in web application code that are aimed to reduce database load and decrease page response time.
 
 The remainder of this paper is structured as follows.
-Section 2 introduces caching terminology, section 3 describes various challenges that caching research focusses on, sections 4, 5, and 6 explain in detail the content of the papers surveyed, and finally section 7 concludes.
+Section 2 introduces caching terminology, section 3 describes various challenges that caching research focuses on, sections 4, 5, and 6 explain in detail the content of the papers surveyed, and finally section 7 concludes.
 
 \section{Terminology}
 At a high level a cache is used to store results of operations so future requests can be served faster.
@@ -52,7 +54,7 @@ A cache miss occurs when the data that is being requested is not in the cache an
 Caching is effective because retrieving data from the cache is much faster than retrieving it from its persistent location.
 Additionally, caching exploits locality.
 Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
-Spatial locality is the idea that an item that is next to an item getting requested is likely to be referened in the future.
+Spatial locality is the idea that an item that is next to an item getting requested is likely to be referenced in the future.
 Traditionally this meant physically next to the object such as in neighboring memory locations.
 However, for web sites it has been broadened to include things like recommended content.
 
@@ -77,7 +79,7 @@ There are then a series of cache misses followed by a series of duplicated reque
 These should be avoided if possible because of the redundant work done by each request.
 
 \section{Research Challenges}
-Most research is focussed on addressing two core challenges with caching.
+Most research is focused on addressing two core challenges with caching.
 The first of which is cache coherency.
 In some cases maintaining cache coherency is trivial because there is only one cache associated with the underlying data.
 However, with more complex data the situation is much more difficult.
@@ -109,7 +111,7 @@ Additionally, many papers propose a 2 or 3-level cache that incorporates both st
 Many approaches have been proposed for how to implement caching strategies in web application code.
 The most straight forward method is to explicitly get, set, and invalidate caches wherever they are needed in the application.
 However, this is tedious and error-prone.\cite{keyBasedCacheExpiration}\cite{triggerBasedORM}
-A preferrable alternative is to have caching built directly into the underlying application code.
+A preferable alternative is to have caching built directly into the underlying application code.
 For example, Ruby on Rails provides a very rich data model that handles most of the caching details behind the scenes.\cite{keyBasedCacheExpiration}
 
 Another Object Relational Model (ORM) has been developed for the Django web framework that automatically handles all necessary caching operations.\cite{triggerBasedORM}
