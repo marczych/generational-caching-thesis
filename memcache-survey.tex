@@ -48,7 +48,13 @@ A cache is typically not the primary storage location for data.
 In most cases there is a permanent backing store such as a database.
 A cache hit occurs when the data that is being requested is in the cache and no further action is required to retrieve the data.
 A cache miss occurs when the data that is being requested is not in the cache and it must be retrieved from the permanent backing store.
+
 Caching is effective because retrieving data from the cache is much faster than retrieving it from its persistent location.
+Caching also exploits locality.
+Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
+Spatial locality is the idea that an item that is next to an item getting requested is likely to be referened in the future.
+Traditionally this meant physically next to the object such as in neighboring memory locations.
+However, for web sites it has been broadened to include things like recommended content.
 
 Caches are typically fairly small in comparison to other persistent stores.
 Caches come in two main flavors: static and dynamic. %TODO This sentence sucks.
