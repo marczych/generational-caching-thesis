@@ -43,15 +43,14 @@ The remainder of this paper is structured as follows.
 Section 2 introduces caching terminology, section 3 describes various challenges that caching research focusses on, sections 4, 5, and 6 explain in detail the content of the papers surveyed, and finally section 7 concludes.
 
 \section{Terminology}
-This section defines some of the terminology used in the field of caching and the remainder of this paper.
 At a high level a cache is used to store results of operations so future requests can be served faster.
 A cache is typically not the primary storage location for data.
-In most cases there is a permanent backing store such as a database.
-A cache hit occurs when the data that is being requested is in the cache and no further action is required to retrieve the data.
+In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
+A cache hit occurs when the data that is being requested is in the cache and no further action is required.
 A cache miss occurs when the data that is being requested is not in the cache and it must be retrieved from the permanent backing store.
 
 Caching is effective because retrieving data from the cache is much faster than retrieving it from its persistent location.
-Caching also exploits locality.
+Additionally, caching exploits locality.
 Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
 Spatial locality is the idea that an item that is next to an item getting requested is likely to be referened in the future.
 Traditionally this meant physically next to the object such as in neighboring memory locations.
@@ -103,12 +102,11 @@ The exception to this trend is a paper that proposes an alternative called SQLCa
 This tool offers a few things that memcached doesn't: complex data types and rich querying for retrieval and invalidation.
 However, memcached is a more general purpose caching system that has many benefits including O(1) operations and inherently distributed nature.\cite{memcachedDotOrg}
 
-Memcached is an example of a dynamic cache daemon.
-There are also static caches that are only updated periodically and are not modified directly by the web application.
-Static caches are popular for search engines because a large number of search queries' return the same data for long amounts of time.
-These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache.\cite{designTradeOffsSearchEngine}
-In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined.\cite{designTradeOffsSearchEngine}
-Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches.\cite{cacheAdmissionPolicies}\cite{designTradeOffsSearchEngine}
+% TODO Put this somewhere?
+% Static caches are popular for search engines because a large number of search queries' return the same data for long amounts of time.
+% These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache.\cite{designTradeOffsSearchEngine}
+% In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined.\cite{designTradeOffsSearchEngine}
+% Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches.\cite{cacheAdmissionPolicies}\cite{designTradeOffsSearchEngine}
 
 \subsection{Implementing in an Application}
 Many approaches have been proposed for how to implement caching strategies in web application code.
@@ -117,14 +115,17 @@ However, this is tedious and error-prone.\cite{keyBasedCacheExpiration}\cite{tri
 A preferrable alternative is to have caching built directly into the underlying application code.
 For example, Ruby on Rails provides a very rich data model that handles most of the caching details behind the scenes.\cite{keyBasedCacheExpiration}
 
-Another Object Relational Model (ORM) has been developed for the Django web framework that automatically handles all necessary caching operations which leaves the developer to write application code.\cite{triggerBasedORM}
+Another Object Relational Model (ORM) has been developed for the Django web framework that automatically handles all necessary caching operations.\cite{triggerBasedORM}
 The project, CacheGenie, provides Python callbacks to database triggers that will be called when queries are run on the database. This allows the tool to update and/or invalidate caches depending on the queries.
 The major advantage of this approach is that no matter how the data is changed the cache remains consistent because cache invalidation occurs at the data layer.
 Other projects have used database triggers with similar results.\cite{scalableConsistentCaching}
 
 \section{Cache Consistency}
-The most difficult problem regarding caches is ensuring consistency with the underlying persistent data store.
-The largest body of research for web caching focuses on search engines because of their monumental data set, request rate, and constantly changing data.
+\subsection{Write-Through Caching}
+Write-through caching is a technique that involves saving the data in the cache at the same as it is being saved in the persistent store.\cite{writeThroughCaching}
+This technique improves cache hit rate because cache misses will only happen as a result of cached values being evicted or a server failure.
+However, this technique only works for simple data types.
+Any other objects that depend on the current object being saved can't be updated in the cache because that data isn't directly accessible and will require a database lookup.
 
 \subsection{Timestamps}
 One paper proposed a system that does not invalidate caches but rather determines cache freshness upon cache hit.\cite{cacheInvalidationWebSearch}
@@ -137,23 +138,14 @@ The timestamp is updated once the object is modified thus invalidating all neces
 This approach also updates the timestamps of any objects that depend on the modified object.
 This technique is employed by 37Signals and various other websites.\cite{keyBasedCacheExpiration}
 
-\subsection{Write-Through Caching}
-Write-through caching is a technique that involves saving the data in the cache at the same as it is being saved in the persistent store.\cite{writeThroughCaching}
-This technique improves cache hit rate because cache misses will only happen as a result of cached values being evicted or a server failure.
-However, this technique only works for simple data types.
-Any other objects that depend on the current object being saved can't be updated in the cache because that data isn't directly accessible and will require a database lookup.
-
 \subsection{Prefetching}
 Prefetching content is another common solution for caching.
 This technique involves caching content before it is requested so it can be retrieved quickly when it is needed.
 Generally an event triggers the precaching system to intelligently decide what content to prefetch in the hopes that the data will be requested soon.
-This takes advantage of spatial locality.
+This approach takes advantage of spatial locality.
 
 A caching system was developed that addresses the problem of cache stampedes.\cite{scalableConsistentCaching}
-A cache stampede occurs when a cache entry is invalidated and the content is regenerated multiple times.
-This results in a large spike in database load because there are many requests for the same content.
-This can be avoided by employing a prefetching and write-through caching mechanism.
-Rather than invalidating any necessary caches, the content can be prefetched and the cache's value will be updated in place.
+Rather than invalidating any necessary caches, the content can be prefetched and the cache's value will be updated in place using write-through caching.
 This approach avoids cache misses at the cost of slight data staleness because the old copy will still be served while the fresh copy is being prefetched.
 The website for the 1998 Winter Olympic games deployed this caching technique and reached nearly 100\% cache hits.\cite{scalableConsistentCaching}
 
@@ -169,19 +161,18 @@ Additionally, the rate of change can be determined for a given query and can be 
 This allows frequently changing data to have a shorter time to live and infrequently changing data to have a longer time to live.
 
 \section{Determining what to cache}
-Some research has been done looking into what data is most efficiently cached.
+Some research has been done looking into what data improves the effectiveness of the cache.
 Many sources propose that fragments of HTML are the most useful data to cache.\cite{comparisonOfCachingSolutions}\cite{scalableConsistentCaching}
 A cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store.\cite{howBasecampGotSoFast}
 
-One paper proposed that enforcing cache admission policies was a valuable way to improve hit ratio.\cite{cacheAdmissionPolicies}
+One paper proposed that enforcing cache admission policies is a valuable way to improve hit ratio.\cite{cacheAdmissionPolicies}
 The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
 Detecting such queries and leaving them out of the cache leaves more room for frequently accessed queries thus increasing cache hit ratio.
 However, another paper claimed that the eviction policy doesn't have a significant impact on cache hit ratio.\cite{refreshingPerspectiveSearch}
 This is because caches can easily be expanded to hold more entries and therefore items rarely get evicted to begin with.\cite{refreshingPerspectiveSearch}
 
-\subsection{Eviction Policies}
-Despite what \cite{refreshingPerspectiveSearch} claims, research has been done investigating eviction policies.
-Least recently used (LRU) is a commonly used eviction policy from operating systems to CPU caches to dynamic web data.
+Despite this claim, research has been done investigating eviction policies.
+Least recently used (LRU) is a commonly used eviction policy.
 There has been research into least likely to be used (LLU) which is an optimal policy that can be approximated by various techniques.
 
 \section{Conclusion}
