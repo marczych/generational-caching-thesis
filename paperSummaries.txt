@@ -70,3 +70,29 @@ Avoid cache stampedes by prefetching and updating caches in place (don't invalid
 cachingdynamicWebContent \cite{cachingDynamicWebContent}
 Fine grained invalidation is essential
 Parse SQL queries to invalidate caches
+
+gumball \cite{gumball}
+Race condition prevention technique for middle-tier caches
+
+sql query to trigger translation a novel consitency technique for cache augmented (no bibtex yet)
+DB triggers to invalidate and update cache.
+Caches query results automatically or application can do it manually.
+
+txCache \cite{txCache}
+Cacheable functions.
+Transactional consistency.
+Cache has validity interval built in.
+Introduces race conditions.
+Modify the DB to allow queries on past sets of data.
+Invalidate caches by examining the query execution plan.
+During a cacheable function, listen for DB calls and accumulate validity intervals which are aggregated into the cached object's validity interval.
+MediaWiki distinguishes transactions between ones that need to see the latest version of the DB and ones that don't. This is because master/slave replication delay and stale data.
+
+dataFreshness \cite{dataFreshness}
+Materialized/non materialized views
+asynchronous cache
+quality of data, quality of service
+
+lazyBase \cite{lazyBase}
+Pipelined approach to meeting user specified query freshness and performance
+DIDN'T READ
