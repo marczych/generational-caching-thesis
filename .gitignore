@@ -20,6 +20,8 @@
 *.mtc
 *.mtc1
 *.out
+*.make
+*.d
+*.fls
 *.synctex.gz
-tmp
 *.pdf
