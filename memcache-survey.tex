@@ -141,17 +141,18 @@ The rest of this thesis is organized as follows...
 \label{background}
 
 \section{More iFixit Background}
-More iFixit background.
+iFixit's most popular content is their step-by-step repair guides.
+An iFixit guide consists of meta data about the guide such as title, summary, introduction, author, time required, and difficulty.
+Additionally, each guide has an ordered list of steps associated it.
+Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
+Guides can also be used in other guides as prerequisites to avoid duplicating content across guides.
+The prerequisite guides' steps are included before the actual guide's steps.
 
 \section{Caching}
-Caching.
-
-\section{How iFixit Caches Now}
-How iFixit caches now.
-
-\section{Related Work}
 
 \subsection{Terminology}
+(I'm not sure if we want all of this or not.)
+
 At a high level a cache is used to store results of operations so future requests can be served faster.
 A cache is typically not the primary storage location for data.
 In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
@@ -184,6 +185,12 @@ One such method is to perform cache invalidation which removes items from the ca
 A cache stampede can occur when a cache that is frequently requested is invalidated.
 There are then a series of cache misses followed by a series of duplicated requests to the backing store followed by a series of cache sets.
 These should be avoided if possible because of the redundant work done by each request.
+
+
+\section{How iFixit Caches Now}
+How iFixit caches now.
+
+\section{Related Work}
 
 \subsection{Research Challenges}
 Most research is focused on addressing two core challenges with caching.
