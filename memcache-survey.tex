@@ -110,23 +110,26 @@ Caching is hard. I'm going to make it better.
 \section{Motivation}
 Web scalability has been an issue for web sites since the dot-com boom of the late nineties.
 All moderately sized websites experience these issues as their breadth of content as well as the number of active users grow.
-The ubiquitous solution to this problem is some form of caching.
+If not properly addressed the website's performance suffers and in some cases can get overloaded by requests and stop responding altogether.
+Websites need to be able to scale with their site traffic to continue providing a good user experience.
 
+\subsection{General}
+Some parts of website scaling is very straightforward.
+Serving static assets can be offloaded to Content Delivery Networks (CDN) that handle requests separately from other resources such as the page's HTML.
+Scaling application machines can be accomplished by putting a load balancer inbetween the requests and a cluster of machines that run the application code and generate the page's HTML.
+The database is the hardest resource to scale because of the inherent problems in distributing data.
+
+\subsection{iFixit}
+iFixit is a moderately sized website that is ``The free repair manual that you can edit.''
+iFixit's step-by-step guides and question and answer platform are driven heavily by user-generated content because any user can contribute content.
+
+\subsection{Caching}
+The ubiquitous solution to scaling websites is some form of caching.
 Although most web servers employ generous amounts of caching, the methods and approaches used vary widely.
 Client side browser caching is popular because it avoids a large amount of network overhead.
 This is typically done by determining whether or not the content has changed since it was last requested.
 Proxy caching is very similar to browser caching except that it happens at proxy servers located in between the client and the primary host server.
-This survey, however, focuses on caching strategies and techniques in web application code that are aimed to reduce database load and decrease page response time.
-
-
-\subsection{General}
-General.
-
-\subsection{iFixit}
-iFixit.
-
-\subsection{Caching}
-Caching.
+This thesis, however, focuses on caching strategies and techniques in web application code that are aimed to reduce database load and decrease page response time.
 
 \section{Main Contributions}
 Main contributions.
