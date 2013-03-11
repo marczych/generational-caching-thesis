@@ -117,7 +117,7 @@ Websites need to be able to scale with their site traffic to continue providing 
 Some parts of website scaling is very straightforward.
 Serving static assets can be offloaded to Content Delivery Networks (CDN) that handle requests separately from other resources such as the page's HTML.
 Scaling application machines can be accomplished by putting a load balancer inbetween the requests and a cluster of machines that run the application code and generate the page's HTML.
-The database is the hardest resource to scale because of the inherent problems in distributing data.
+The database is the hardest resource to scale because of the inherent problems in distributing data while maintaining consistency.
 
 \subsection{iFixit}
 iFixit is a moderately sized website that is ``The free repair manual that you can edit.''
@@ -145,8 +145,25 @@ iFixit's most popular content is their step-by-step repair guides.
 An iFixit guide consists of meta data about the guide such as title, summary, introduction, author, time required, and difficulty.
 Additionally, each guide has an ordered list of steps associated it.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
-Guides can also be used in other guides as prerequisites to avoid duplicating content across guides.
+To avoid duplicating content guides can also be used in other guides as prerequisites.
 The prerequisite guides' steps are included before the actual guide's steps.
+
+All of iFixit's content is dynamic.
+That is to say that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
+Additionally, anyone can edit the content due to it being a wiki.
+
+iFixit certainly has a more read-heavy workload, however, writes are still fairly common.
+In particular, iFixit is known for its device ``teardowns.''
+These events consist of acquiring a device as soon as it is released and opening it immediately after.
+The opening process is documented and updated on iFixit's website in realtime.
+These events attract thousands of visitors to the site in a short period of time.
+Because of this, the website must be able to handle a read-heavy workload with lots of writes as well.
+
+In addition to their website, iFixit runs a Software as a Service providing a technical documentation platform for any customer who needs step-by-step instructions.
+Much of this content is private so the general solutions to web scaling such as full page caching and web server proxy caching cannot be used.
+
+The primary bottlneck is the database machine because it has to retrieve data for every incoming HTTP request.
+On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
 
 \section{Caching}
 
