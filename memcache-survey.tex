@@ -109,19 +109,28 @@ Caching is hard. I'm going to make it better.
 
 \section{Motivation}
 Web scalability has been an issue for web sites since the dot-com boom of the late nineties.
-All moderately sized websites experience these issues as their breadth of content as well as the number of active users grow.
-If not properly addressed the website's performance suffers and in some cases can get overloaded by requests and stop responding altogether.
+All moderately sized websites experience web server issues as their breadth of content as well as the number of active users grow.
+If not properly addressed the website's performance suffers.
+In some cases the site can get overloaded by requests and stop responding altogether.
 Websites need to be able to scale with their site traffic to continue providing a good user experience.
 
 \subsection{General}
 Some parts of website scaling is very straightforward.
-Serving static assets can be offloaded to Content Delivery Networks (CDN) that handle requests separately from other resources such as the page's HTML.
-Scaling application machines can be accomplished by putting a load balancer inbetween the requests and a cluster of machines that run the application code and generate the page's HTML.
+Serving static assets such as Cascading Style Sheets (CSS), JavaScript (JS), and images can be offloaded to Content Delivery Networks (CDN) that handle requests separately from other resources such as the page's HTML.
+Scaling application machines can be accomplished by sending all incoming requests to a load balancer.
+The load balancer then decides what application machine in the cluster of available machines should handle this request.
+The request is forwarded to the selected machine which eventually returns the HTML of the page to the load balancer which then returns it to the user.
+Although application machines can be scaled easily, they all still need to access the same underlying data which is typically a single database machine.
 The database is the hardest resource to scale because of the inherent problems in distributing data while maintaining consistency.
 
 \subsection{iFixit}
 iFixit is a moderately sized website that is ``The free repair manual that you can edit.''
-iFixit's step-by-step guides and question and answer platform are driven heavily by user-generated content because any user can contribute content.
+iFixit's step-by-step guides and question and answer platform are driven heavily by user-generated content.
+All repair guides on iFixit are publicly editable and contain rich revision history.
+This includes a patrolling system in which edits by unprivileged users are pending until a privileged user accepts them.
+% TODO: Explain how "all kinds of folks" ask questions on Answers and members of the community answer and vote on them?
+The consequence of these features is that all of the content is stored in a database.
+All incoming requests for HTML need to be handled on demand based on content retrieved from the database.
 
 \subsection{Caching}
 The ubiquitous solution to scaling websites is some form of caching.
@@ -141,11 +150,12 @@ The rest of this thesis is organized as follows...
 \label{background}
 
 \section{More iFixit Background}
+\subsection{Data and Site Usage}
 iFixit's most popular content is their step-by-step repair guides.
 An iFixit guide consists of meta data about the guide such as title, summary, introduction, author, time required, and difficulty.
 Additionally, each guide has an ordered list of steps associated it.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
-To avoid duplicating content guides can also be used in other guides as prerequisites.
+To avoid duplicating, content guides can also be included in other guides as prerequisites.
 The prerequisite guides' steps are included before the actual guide's steps.
 
 All of iFixit's content is dynamic.
@@ -154,16 +164,28 @@ Additionally, anyone can edit the content due to it being a wiki.
 
 iFixit certainly has a more read-heavy workload, however, writes are still fairly common.
 In particular, iFixit is known for its device ``teardowns.''
-These events consist of acquiring a device as soon as it is released and opening it immediately after.
+These events consist of opening a brand new device as soon as possible.
 The opening process is documented and updated on iFixit's website in realtime.
 These events attract thousands of visitors to the site in a short period of time.
-Because of this, the website must be able to handle a read-heavy workload with lots of writes as well.
+Because of this, the website must be able to handle a read-heavy workload while simultaneously writing to the same data.
 
-In addition to their website, iFixit runs a Software as a Service providing a technical documentation platform for any customer who needs step-by-step instructions.
+In addition to their main website, iFixit runs a Software as a Service (SaaS) that provides a technical documentation platform to anyone who needs step-by-step instructions.
 Much of this content is private so the general solutions to web scaling such as full page caching and web server proxy caching cannot be used.
 
 The primary bottlneck is the database machine because it has to retrieve data for every incoming HTTP request.
 On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
+
+\subsection{Web Architecture}
+The following text describes iFixit's production architecture at the time of this writing.
+
+iFixit runs 2 load balancers - one for iFixit and one for their SaaS.
+At any given time there are typically 4 to 8 application machines that run iFixit's core software which is written in PHP.
+There is one master database machine running the Percona build of MySQL which handles all reads and writes.
+There is also one slave database machine that is asynchronously replicated from the master database using MySQL's built in replication.
+However, this machine is used purely as a backup and is not used to improve performance.
+
+All of this is built using Amazon Web Services (AWS).
+AWS services used include Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront, a Content Delivery Network (CDN), for serving content out of S3, and Elastic Block Store (EBS) for raw block storage on each server instance.
 
 \section{Caching}
 
@@ -181,37 +203,39 @@ Additionally, caching exploits locality.
 Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
 Spatial locality is the idea that an item that is next to an item getting requested is likely to be referenced in the future.
 Traditionally this meant physically next to the object such as in neighboring memory locations.
-However, for web sites it has been broadened to include things like recommended content.
+However, for web sites it has been broadened to include items such as recommended content.
 
 Caches can be of the static or dynamic type.
 A static cache is one that is not updated as a result of the application running.
 The application can request data from the cache but it cannot add, modify, or remove cache entries.
-However, the cache is updated periodically to keep it up to date.
+However, the cache is periodically updated outside of the application to keep it mostly up to date.
 The timeframe for this differs from application to application but is largely a function of how often the underlying data changes.
 In contrast, a dynamic cache is one that can be updated as a result of the application execution.
-The application can freely add, modify, and remove cache entries based on the operations it is performing.
+The application can freely add, modify, and remove cache entries based on the operations it is performing due to requests.
 
-Dynamic caches have a limited size and may eventually fill to capacity
+Dynamic caches have a limited size and may eventually fill to capacity.
 When this occurs items must be removed to make room for new ones.
 The eviction policy determines which cache entries are removed.
 Some caches allow entries to be set with an expire time.
-After the specified time has passed the entry is expired and is no longer a valid cache entry.
+After the specified time has passed the entry is expired and is no longer a valid cache entry and requests for it will miss.
 
 Cache coherence, also referred to as cache consistency, is the concept of keeping the data in the cache consistent with the data stored in the primary backing store.
-One such method is to perform cache invalidation which removes items from the cache.
+One such method is to perform cache invalidation upon data modification which removes any modified items from the cache so the data must be generated upon the next request.
 A cache stampede can occur when a cache that is frequently requested is invalidated.
 There are then a series of cache misses followed by a series of duplicated requests to the backing store followed by a series of cache sets.
 These should be avoided if possible because of the redundant work done by each request.
+If not handled properly, this event alone can crash web sites.
 
 
 \section{How iFixit Caches Now}
 How iFixit caches now.
 
 \section{Related Work}
+The following was taken from various papers written on the subject of caching.
+Some of it may not be relevant anymore and some of it could be moved to other background sections.
 
 \subsection{Research Challenges}
-Most research is focused on addressing two core challenges with caching.
-The first of which is cache coherency.
+Most research is focused on addressing two core challenges with caching, the first of which is cache coherency.
 In some cases maintaining cache coherency is trivial because there is only one cache associated with the underlying data.
 However, with more complex data the situation is much more difficult.
 There may be dependencies between objects which means that multiple caches need to be invalidated at the same time.
@@ -312,16 +336,19 @@ There has been research into least likely to be used (LLU) which is an optimal p
 Memcached.
 
 \section{Metrics}
-Metrics.
+This data is more or less in the Measured Values section of Validation.
+We could either migrate that section here or remove this section.
 
 \chapter{Validation}
 \label{validation}
+This section was written for 590 when I didn't have a clear topic so this will have to be tweaked once I actually run the experiments.
+Other similar papers should be consulted to get a good experimental setup that is accepted in the community.
 
-\subsection{General Approach}
+\section{General Approach}
 Validating my work is a fairly straightforward process.
 The basic approach will involve gathering various statistics with and without my approach during an experiment based on a repeatable set of input data. %TODO: This sentence kinda sucks.
 
-\subsection{Measured Values}
+\section{Measured Values}
 Some values that should be increased include cache hit rate and requests per second.
 Some values that should be decreased include server load and page response time.
 However, merely comparing the two sets of data will not be an accurate picture of the situation.
@@ -338,7 +365,7 @@ A caching mechanism that requires a diligent programmer to carefully hand craft 
 On the other hand, a caching mechanism that operates behind the scenes without the programmer's knowledge is very easy to use.
 Measuring this will be a very subjective matter.
 
-\subsection{Experimental Setup}
+\section{Experimental Setup}
 Developing an experiment to get consistent results is crucial.
 I am planning on recording all site traffic during a period of time and replaying it during the experiments.
 This ensures that the workload will be the same across all tests.
@@ -368,16 +395,6 @@ This will merely increase the time between tests.
 
 All experiments will be run on a duplicate set of machines that mirror the architecture that is used in production.
 This ensures that the results gathered will be consistent with how they will perform in production.
-
-\chapter{Conclusion}
-\label{conclusion}
-This paper has given a survey of caching methods used in web application code.
-As you can see, different strategies work well for different types of data.
-For example, write-through caching is very effective for simple data types.
-More complex data, however, requires a caching strategy that can handle dependencies between objects.
-
-There is still room for more research in this field.
-In particular, an empirical study that determines the trade-offs between large and fine-grained caching would be a worthwhile contribution.
 
 
 % ------------- End main chapters ----------------------
