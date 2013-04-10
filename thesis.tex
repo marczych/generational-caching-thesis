@@ -227,8 +227,23 @@ These should be avoided if possible because of the redundant work done by each r
 If not handled properly, this event alone can crash web sites.
 
 
-\section{How iFixit Caches Now}
-How iFixit caches now.
+\section{iFixit's Current Caching Strategy}
+iFixit currently has a very ad hoc approach to caching.
+Any specific pages, database queries, or expensive operations are guarded by a cache get with a handcrafted cache key.
+If the object is not in the cache then it is retrieved and stored in the cache for later use.
+The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
+iFixit uses two strategies for cache invalidation that are described below.
+
+The first strategy relies on the cache's expiration time to update the entry with fresh data.
+After the specified amount of time the cache is no longer valid so the application is forced to regenerate it and set it in the cache for later use.
+The cache is never invalidated by the application when the underlying content changes.
+This strategy is particularly useful for data that isn't required to be correct such as related content, approximate totals, etc.
+
+The second strategy used by iFixit involves deleting all relevant cache entries whenever data is changed.
+It is up to the developer to find the appropriate places to delete cache entries when certain events occur.
+The advantages to this approach are that it's simple to understand, straightforward to implement, and if done correctly ensures that fresh data is served.
+
+% TODO: Consider discussing varnish and page cache.
 
 \section{Related Work}
 \subsection{Research Challenges}
