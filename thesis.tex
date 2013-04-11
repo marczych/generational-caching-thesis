@@ -415,6 +415,7 @@ However, the additional columns can be used in cache keys for data that depends 
 The amount of extra data loaded in addition to the primary table to make the overhead of generational caching worthwhile varies on a case-by-case basis.
 
 \section{Implementation}
+\subsection{Cache-Aware ORM}
 Most of the work done involved augmenting iFixit's ORM to cache objects when they are retrieved.
 The primary operation for retrieving data through the ORM is {\tt findAllByKey} which creates objects based on their primary keys in the database.
 A list of primary keys is provided and the ORM selects those tuples from the database and returns the objects constructed from them.
@@ -430,6 +431,21 @@ However, we can do one better and cache that operation by using {\tt findAllCach
 For this call a flag is passed to {\tt findAllCached} that indicates that only the primary table should be loaded.
 Otherwise all other meta data would be loaded which is exactly what the first {\tt findAllCached} does.
 The recursive call constructs a cache key using only the primary key to avoid infinite recursion.
+
+The Memcached operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential memcached {\tt get}s.
+All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
+The uncached objects are then cached for later use.
+
+\subsection{Caching HTML}
+We also cache fragments of HTML because template code can be fairly slow and unperformant.
+To help facilitate this, we implemented a few different caching functions for use in HTML templates.
+The first set of functions is {\tt cacheStart} and {\tt cacheEnd} which are used for caching a single block of HTML.
+{\tt cacheStart} accepts either an object that has a {\tt cacheKey} method (e.g. an ORM object) or a string cache key.
+Another string is supplied that is added to the cache key to differentiate this fragment of HTML from other fragments constructed from the same object.
+If the HTML was found in the cache it is output to {\tt stdout} and {\tt cacheStart} returns {\tt true}.
+Otherwise output buffering is started to capture the HTML that is generated when running the template code and {\tt cacheStart} returns {\tt false}.
+A call to {\tt cacheEnd} signals the end of the cached HTML section.
+This function closes output buffering, gets the contents of the buffer, caches it, and finally outputs the HTML to {\tt stdout}.
 
 
 \chapter{Validation}
