@@ -27,6 +27,7 @@
 \usepackage{amsmath}
 \usepackage[letterpaper]{geometry}
 \usepackage[overload]{textcase}
+\usepackage{minted}
 
 \bibliographystyle{abbrv}
 
@@ -446,7 +447,17 @@ If the HTML was found in the cache it is output to {\tt stdout} and {\tt cacheSt
 Otherwise output buffering is started to capture the HTML that is generated when running the template code and {\tt cacheStart} returns {\tt false}.
 A call to {\tt cacheEnd} signals the end of the cached HTML section.
 This function closes output buffering, gets the contents of the buffer, caches it, and finally outputs the HTML to {\tt stdout}.
+A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 
+\begin{figure}[h]
+\begin{minted}{php}
+<? if (!cacheStart($ormObject, 'view-all', CACHE_FOREVER)): ?>
+   <? /* HTML generation */ ?>
+<? cacheEnd(); endif; ?>
+\end{minted}
+\caption{Example usage of cacheStart and cacheEnd.}
+\label{fig:cacheStartExample}
+\end{figure}
 
 \chapter{Validation}
 \label{validation}
