@@ -376,11 +376,14 @@ The client library performs consistent hashing on any key lookups to determine w
 The result is that adding and removing servers doesn't drastically impact hit rate because the majority of keys map to the same servers before and after the change.
 
 
-\chapter{Design}
-\label{design}
-In this chapter, we explain the high-level design of the generational caching strategy implemented for iFixit.
+\chapter{Design and Implementation}
+\label{designAndImplementation}
+In this chapter, we explain in depth the caching solution we analyze in Chapter X.
+In section 3.1 we explain the high-level design of the generational caching strategy implemented for iFixit.
+In section 3.2 we go over the details of implementing the design in iFixit's code base.
 
-\section{What is being cached}
+\section{Design}
+\subsection{What is being cached}
 This section describes the three primary types of data that are cached.
 The first data type are objects constructed from query results that represent a tuple in the database.
 These are used as an ORM and can be used to make modifications to the database as well as just retrieve data for consumption.
@@ -389,7 +392,7 @@ These are typically generated from data retrieved from the database and need to 
 Finally, results of ad hoc queries are also cached.
 These typically are used in addition to the ORM to gather more complex data.
 
-\section{ORM Caching}
+\subsection{ORM Caching}
 The primary key uniquely identifies a tuple in the database and can be used with the ORM to select a single record.
 Once the record is loaded other meta data not contained in the primary table is loaded and then the entire object is cached.
 By default, the cache key for objects is just the primary key.
