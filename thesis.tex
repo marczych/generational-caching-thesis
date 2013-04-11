@@ -414,6 +414,23 @@ In this case there is no benefit to using generational caching because the data 
 However, the additional columns can be used in cache keys for data that depends on it to avoid cache invalidation.
 The amount of extra data loaded in addition to the primary table to make the overhead of generational caching worthwhile varies on a case-by-case basis.
 
+\section{Implementation}
+Most of the work done involved augmenting iFixit's ORM to cache objects when they are retrieved.
+The primary operation for retrieving data through the ORM is {\tt findAllByKey} which creates objects based on their primary keys in the database.
+A list of primary keys is provided and the ORM selects those tuples from the database and returns the objects constructed from them.
+
+In order to add caching to {\tt findAllByKey} we add a wrapper method called {\tt findAllCached}.
+At a very high-level, this method constructs cache keys for the given primary keys and performs a cache get on them.
+Any objects that were not cached are retrieved from the database using {\tt findAllByKey} and are then stored in the cache.
+
+We allow classes derived from the ORM to specify which columns in addition to the primary key to include in the cache key.
+More data must be retrieved from the database to construct the cache key if only the primary keys are provided to {\tt findAllByKey} and the derived class specifies additional cache key columns.
+Fortunately we already have a method, {\tt findAllBykey}, that retrieves objects based on their primary key that can be used to retrieve more data.
+However, we can do one better and cache that operation by using {\tt findAllCached} instead.
+For this call a flag is passed to {\tt findAllCached} that indicates that only the primary table should be loaded.
+Otherwise all other meta data would be loaded which is exactly what the first {\tt findAllCached} does.
+The recursive call constructs a cache key using only the primary key to avoid infinite recursion.
+
 
 \chapter{Validation}
 \label{validation}
