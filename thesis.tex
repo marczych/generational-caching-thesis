@@ -347,6 +347,8 @@ There are two main operations in Memcached: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
 If the data is in the cache it is returned to the caller, otherwise the result is empty which indicates that the application must retrieve the data elsewhere.
 Data is added to Memcached by calling {\tt set} with a cache key, expiration time, and the data being stored in the cache.
+Another specialty command is {\tt getMulti} which is used to retrieve multiple keys in one operation.
+This is used to improve client performance by reducing the network overhead associated with retrieving many keys in succession.
 All Memcached operations are constant time ({\tt O(1)}) with respect to the number of elements stored in it.
 
 There are three ways for cached data to be removed from Memcached.
@@ -364,7 +366,7 @@ Pages are assigned to slab-classes on an as-needed basis.
 Slab-classes determine the maximum size of data to be stored in the slab and consequently the size of chunks in pages assigned to the slab-class.
 When storing data in Memcached, the slab-class with the smallest chunk size that the data can fit in is used.
 Any remaining space in the chunk cannot be used to store any other data and therefore ends up being wasted space.
-However, the amount of space wasted in slab allocation is less than a naive implementation which results in memory fragmentation.
+However, the amount of space wasted in slab allocation is less than a naive implementation which results in memory fragmentation. % TODO: naive needs oomlaut(sp?)?
 All replacement algorithms operate on a per-slab-class basis.
 
 Memcached is distributed in nature.
