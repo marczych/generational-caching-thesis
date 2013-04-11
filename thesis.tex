@@ -267,7 +267,6 @@ Memcached is by far the most popular web caching system; it is currently deploye
 The exception to this trend is a paper that proposes an alternative called SQLCached \cite{sqlCached}.
 This tool offers a few things that memcached doesn't: complex data types and rich querying for retrieval and invalidation.
 This is possible because SQLCached uses SQLite as its caching mechanism.
-However, memcached is a more general purpose caching system that has many benefits including constant time ({\tt O(1)}) operations and inherently distributed nature \cite{memcachedDotOrg}.
 
 Memcached is an example of a dynamic cache daemon.
 There are also static caches that are only updated periodically and are not modified directly by the web application.
@@ -343,7 +342,36 @@ There has been research into least likely to be used (LLU) which is an optimal p
 
 
 \section{Memcached}
-Memcached.
+``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering.''\cite{memcachedDotOrg}
+There are two main operations in Memcached: {\tt get} and {\tt set}.
+Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
+If the data is in the cache it is returned to the caller, otherwise the result is empty which indicates that the application must retrieve the data elsewhere.
+Data is added to Memcached by calling {\tt set} with a cache key, expiration time, and the data being stored in the cache.
+All Memcached operations are constant time ({\tt O(1)}) with respect to the number of elements stored in it.
+
+There are three ways for cached data to be removed from Memcached.
+The expire time the data was set with determines the maximum lifespan of the cache for which it is valid.
+Once the data has expired it is no longer returned for {\tt get} requests although the data is not immediately removed from memory.
+Before data has expired, however, items can be evicted due to memory pressure.
+This occurs when new items are being added to the cache and there isn't any room.
+Expired items are evicted first if any are found.
+If not the LRU policy is used to select a key to evict.
+Finally, cache entries can also be removed by performing {\tt delete} requests and providing the key that identifies the data to be deleted.
+
+To reduce the effects of memory fragmentation, Memcached employs a technique called slab allocation.
+The total memory available to Memcached is partitioned into 1MB pages.
+Pages are assigned to slab-classes on an as-needed basis.
+Slab-classes determine the maximum size of data to be stored in the slab and consequently the size of chunks in pages assigned to the slab-class.
+When storing data in Memcached, the slab-class with the smallest chunk size that the data can fit in is used.
+Any remaining space in the chunk cannot be used to store any other data and therefore ends up being wasted space.
+However, the amount of space wasted in slab allocation is less than a naive implementation which results in memory fragmentation.
+All replacement algorithms operate on a per-slab-class basis.
+
+Memcached is distributed in nature.
+Adding more servers to a web application involves adding the new Memcached instance's IP address and port to the list of servers that the Memcached client library uses.
+Keys map to exactly one server so the total memory available in the Memcached cluster is the sum of memory available on each instance
+The client library performs consistent hashing on any key lookups to determine which server in the cluster to send the request to.
+The result is that adding and removing servers doesn't drastically impact hit rate because the majority of keys map to the same servers before and after the change.
 
 \section{Metrics}
 This data is more or less in the Measured Values section of Validation.
