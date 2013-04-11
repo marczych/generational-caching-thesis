@@ -375,9 +375,44 @@ Keys map to exactly one server so the total memory available in the Memcached cl
 The client library performs consistent hashing on any key lookups to determine which server in the cluster to send the request to.
 The result is that adding and removing servers doesn't drastically impact hit rate because the majority of keys map to the same servers before and after the change.
 
-\section{Metrics}
-This data is more or less in the Measured Values section of Validation.
-We could either migrate that section here or remove this section.
+\chapter{Design}
+\label{design}
+In this chapter, we explain the high-level design of the generational caching strategy implemented for iFixit.
+
+\section{What is being cached}
+This section describes the three primary types of data that are cached.
+The first data type are objects constructed from query results that represent a tuple in the database.
+These are used as an ORM and can be used to make modifications to the database as well as just retrieve data for consumption.
+The second data type are fragments of HTML.
+These are typically generated from data retrieved from the database and need to be invalidated anytime the underlying data has changed.
+Finally, results of ad hoc queries are also cached.
+These typically are used in addition to the ORM to gather more complex data.
+
+\section{ORM Caching}
+The primary key uniquely identifies a tuple in the database.
+This can be used with the ORM to select a single record.
+Once the record is loaded other meta data not contained in the primary table is loaded and then the entire object is cached.
+By default, the cache key for objects is just the primary key.
+
+Generational caching involves including a value that is updated anytime the object is updated in the cache key.
+This value or collection of values is typically found in the primary table of the object.
+To accomplish this individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
+In most cases that piece of data is not known before retrieving the object in which case it must be retrieved before checking the cache.
+The entire database tuple is cached using the primary key to avoid hitting the database as much as possible.
+
+With the entire database tuple we can construct the full cache key and check for its presence in the cache.
+If it exists in the cache then it can be returned to the caller immediately.
+If it doesn't then it must be retrieved from the database.
+Fortunately the primary table tuple has already been fetched from the database so we only need to load the other meta data for the object and store it in the cache.
+
+This strategy works especially well when retrieving an object's meta data is very expensive.
+If no meta data is loaded then the ``fully loaded'' object is the exact same as the one fetched when gathering more data to construct the cache key.
+In this case there is no benefit to using generational caching when retrieving the object.
+However, it can be used in cache keys for data that depends on it to avoid cache invalidation.
+The amount of extra data loaded after the primary table is fetched to make the overhead of generational caching worthwhile varies on a case-by-case basis.
+
+Additionally, all of this happens for multiple objects as well.
+That is to say that multiple objects can be fetched in one call and the same number of database queries and memcache gets are performed.
 
 \chapter{Validation}
 \label{validation}
