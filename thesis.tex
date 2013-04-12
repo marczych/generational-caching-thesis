@@ -440,6 +440,7 @@ The uncached objects are then cached for later use.
 \subsection{Caching HTML}
 We also cache fragments of HTML because template code can be fairly slow and unperformant.
 To help facilitate this, we implemented a few different caching functions for use in HTML templates.
+
 The first set of functions is {\tt cacheStart} and {\tt cacheEnd} which are used for caching a single block of HTML.
 {\tt cacheStart} accepts either an object that has a {\tt cacheKey} method (e.g. an ORM object) or a string cache key.
 Another string is supplied that is added to the cache key to differentiate this fragment of HTML from other fragments constructed from the same object.
@@ -458,6 +459,19 @@ A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 \caption{Example usage of cacheStart and cacheEnd.}
 \label{fig:cacheStartExample}
 \end{figure}
+
+The second caching function we wrote is {\tt batchCache} which is designed for caching lots of fragments of HTML.
+The most common use case for it is rendering a list of objects one after the other e.g. search results.
+{\tt batchCache} is better than {\tt cacheStart} and {\tt cacheEnd} for this circumstance because of the network overhead for sequential Memcached calls.
+This is especially true for fragments of HTML whose generation time is close to or less than the average time of a Memcached {\tt get}.
+
+{\tt batchCache} accepts a mapping of string cache key to any type of data.
+The cache keys are used in conjunction with an additional string similar to {\tt cacheStart} to check the cache for HTML.
+A function supplied to {\tt batchCache} is called with an array of all the cache keys and data of the missed cache entries.
+This allows clients to gather data at the last moment possible because it isn't necessary to get the data at all if the HTML is cached.
+Then for each of the resulting objects output buffering is started and the supplied rendering function is called with the object as an argument.
+Output buffering is then closed and the resulting HTML is stored in the cache and output to {\tt stdout}.
+
 
 \chapter{Validation}
 \label{validation}
