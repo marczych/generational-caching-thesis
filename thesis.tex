@@ -395,22 +395,24 @@ These typically are used in addition to the ORM to gather more complex data.
 
 \subsection{ORM Caching}
 The primary key uniquely identifies a tuple in the database and can be used with the ORM to select a single record.
-Once the record is loaded other meta data not contained in the primary table is loaded and then the entire object is cached.
+Once the record is loaded other data not contained in the primary table is loaded and then the entire object is cached.
 By default, the cache key for objects is just the primary key.
 
-Generational caching involves including a value that is updated anytime the object is updated in the cache key.
-This value or collection of values is typically found in the primary table of the object.
+Generational caching relies on a value in the primary table being updated whenever any other data in the table is updated.
+This value can be incorporated into the object's cache key which ensures that the value in the cache will always be correct for that cache key.
+If the data changes then it has a different cache key so the other caches don't need to be invalidated.
 To accomplish this individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
-In most cases that piece of data is not known before retrieving the object in which case it must be retrieved before checking the cache.
+In most cases the additional columns not known before retrieving the object in which case they must be retrieved before checking the cache.
 To avoid hitting the database as much as possible, the entire database tuple that is used to generate the cache key is cached using its primary key.
+This cache is deleted anytime the object is saved.
 
 With the entire database tuple we can construct the full cache key and check for its presence in the cache.
 If it exists in the cache then it can be returned to the caller immediately.
 If it doesn't then it must be retrieved from the database.
-Fortunately the primary table tuple has already been fetched from the database so we only need to load the other meta data for the object and store it in the cache.
+Fortunately the primary table tuple has already been fetched from the database so we only need to load the additional data for the object and store it in the cache.
 
-This strategy works especially well when retrieving an object's meta data is very expensive.
-If no meta data is loaded then the ``fully loaded'' object is the exact same as the one fetched when gathering more data to construct the cache key.
+This strategy works especially well when retrieving an object's additional data is very expensive.
+If no additional data is loaded then the ``fully loaded'' object is the exact same as the one fetched when gathering more data to construct the cache key.
 In this case there is no benefit to using generational caching because the data cached by the primary key is the same as the data cached with the full set of columns.
 However, the additional columns can be used in cache keys for data that depends on it to avoid cache invalidation.
 The amount of extra data loaded in addition to the primary table to make the overhead of generational caching worthwhile varies on a case-by-case basis.
@@ -426,7 +428,7 @@ At a very high-level, this method constructs cache keys for the given primary ke
 Any objects that were not cached are retrieved from the database using {\tt findAllByKey} and are then stored in the cache.
 
 We allow classes derived from the ORM to specify which columns in addition to the primary key to include in the cache key.
-More data must be retrieved from the database to construct the cache key if only the primary keys are provided to {\tt findAllByKey} and the derived class specifies additional cache key columns.
+More data must be retrieved from the database to construct the cache key if only the primary keys are provided to {\tt findAllCached} and the derived class specifies additional cache key columns.
 Fortunately we already have a method, {\tt findAllBykey}, that retrieves objects based on their primary key that can be used to retrieve more data.
 However, we can do one better and cache that operation by using {\tt findAllCached} instead.
 For this call a flag is passed to {\tt findAllCached} that indicates that only the primary table should be loaded.
