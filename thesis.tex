@@ -110,7 +110,7 @@ Caching is hard. I'm going to make it better.
 \section{Motivation}
 Web scalability has been an issue for web sites since the dot-com boom of the late nineties. % TODO: Citation.
 All moderately sized websites experience web server issues as their breadth of content as well as the number of active users grow.
-If not properly addressed the website's performance suffers.
+If not properly addressed, the website's performance suffers.
 In some cases the site can get overloaded by requests and stop responding altogether.
 Websites need to be able to scale with their site traffic to continue providing a good user experience.
 
@@ -122,22 +122,32 @@ The request is forwarded to the selected machine which eventually returns the HT
 Although application machines can be scaled easily, they all still need to access the same underlying data which is typically a single database machine.
 The database is the hardest resource to scale because of the inherent problems in distributing data while maintaining consistency.
 
-% TODO: Split. Talk about company first then talk about website and scaling.
-iFixit is a moderately sized website that is ``The free repair manual that you can edit.''
-iFixit's step-by-step guides and question and answer platform are driven heavily by user-generated content.
-All repair guides on iFixit are publicly editable and contain rich revision history.
-This includes a patrolling system in which edits by unprivileged users are pending until a privileged user accepts them.
-% TODO: Explain how "all kinds of folks" ask questions on Answers and members of the community answer and vote on them?
-The consequence of these features is that all of the content is stored in a database.
-All incoming requests for HTML need to be handled on demand based on content retrieved from the database.
-
-\subsection{Caching}
 The ubiquitous solution to scaling websites is some form of caching.
 Although most web servers employ generous amounts of caching, the methods and approaches used vary widely.
 Client side browser caching is popular because it avoids a large amount of network overhead.
 This is typically done by determining whether or not the content has changed since it was last requested.
 Proxy caching is very similar to browser caching except that it happens at proxy servers located in between the client and the primary host server.
 This thesis, however, focuses on caching strategies and techniques in web application code that are aimed to reduce database load and decrease page response time.
+
+Although caching is used widely in industry, it is not a solved problem.
+Websites still struggle with determining what data to cache and how fine-grained to make the caches.
+Additionally, cache invalidation is the most important aspect of caching strategies and commonly is the driving force behind new solutions.
+This is primarily because websites are becoming less tolerant of serving stale data especially when their content is constantly changing.
+Current research is focused on maintaining a high cache hit rate while maintaining cache coherency.
+
+Modern websites are interested in caching as a way to handle increasing volumes of traffic.
+Traditional website scaling techniques aren't effective because of the vast amounts of user-generated content and dynamic nature of websites.
+Nearly all web pages need to be generated on demand from content out of the database.
+Because of this, server load becomes a real issue especially for the database machine.
+
+One such website facing server scaling problems is {\textsf iFixit}.
+{\textsf iFixit} is a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
+{\textsf iFixit}'s step-by-step guides and question and answer platform are driven heavily by user-generated content.
+All repair guides on iFixit are publicly editable and contain rich revision history.
+This includes a patrolling system in which edits by unprivileged users are pending until a privileged user accepts them.
+% TODO: Explain how "all kinds of folks" ask questions on Answers and members of the community answer and vote on them?
+The consequence of these features is that all of the content is stored in a database.
+{\textsf iFixit} currently employs an ad hoc caching strategy that relieves some server load, however, the effectiveness of the cache can be greatly improved.
 
 % TODO: Diagrams?
 
