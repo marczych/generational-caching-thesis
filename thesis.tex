@@ -168,7 +168,7 @@ iFixit's most popular content is their step-by-step repair guides.
 An iFixit guide consists of meta data about the guide such as title, summary, introduction, author, time required, and difficulty.
 Additionally, each guide has an ordered list of steps associated it.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
-To avoid duplicating, content guides can also be included in other guides as prerequisites.
+To avoid duplicating content, guides can also be included in other guides as prerequisites.
 The prerequisite guides' steps are included before the actual guide's steps.
 
 All of iFixit's content is dynamic.
@@ -177,13 +177,13 @@ Additionally, anyone can edit the content due to it being a wiki.
 
 iFixit certainly has a more read-heavy workload, however, writes are still fairly common.
 In particular, iFixit is known for its device ``teardowns.''
-These events consist of opening a brand new device as soon as possible.
+These events consist of opening a brand new device as soon as it becomes available on the market.
 The opening process is documented and updated on iFixit's website in realtime.
 These events attract thousands of visitors to the site in a short period of time.
 Because of this, the website must be able to handle a read-heavy workload while simultaneously writing to the same data.
 
-In addition to their main website, iFixit runs a Software as a Service (SaaS) that provides a technical documentation platform to anyone who needs step-by-step instructions.
-Much of this content is private so the general solutions to web scaling such as full page caching and web server proxy caching cannot be used.
+In addition to their main website, iFixit runs a Software as a Service (SaaS) platform for technical documentation platform to anyone who needs step-by-step instructions.
+The general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
 
 The primary bottlneck is the database machine because it has to retrieve data for every incoming HTTP request.
 On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
@@ -214,7 +214,7 @@ Caching is effective because retrieving data from the cache is much faster than 
 Additionally, caching exploits locality.
 Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
 Spatial locality is the idea that items in nearby storage locations are referenced in close proximity to one another.
-As of late, spatial locality has been broaded for web sites to include access patterns such as recommended and related content.
+As of late, spatial locality has been broadened for web sites to include access patterns such as recommended and related content.
 
 Caches can be of the static or dynamic type.
 A static cache is one that is not updated as a result of the application running.
@@ -240,7 +240,7 @@ If not handled properly, this event alone can crash web sites.
 
 \section{iFixit's Current Caching Strategy}
 iFixit currently has a very ad hoc approach to caching.
-Any specific pages, database queries, or expensive operations are guarded by a cache get with a handcrafted cache key.
+Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
 If the object is not in the cache then it is retrieved and stored in the cache for later use.
 The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
 iFixit uses two strategies for cache invalidation that are described below.
@@ -253,6 +253,8 @@ This strategy is particularly useful for data that isn't required to be correct 
 The second strategy used by iFixit involves deleting all relevant cache entries whenever data is changed.
 It is up to the developer to find the appropriate places to delete cache entries when certain events occur.
 The advantages to this approach are that it's simple to understand, straightforward to implement, and if done correctly ensures that fresh data is served.
+
+% TODO: Discuss weaknesses. Justify needs for your work!
 
 % TODO: Consider discussing varnish and page cache.
 
