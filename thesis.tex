@@ -288,12 +288,12 @@ There are also static caches that are only updated periodically and are not modi
 Static caches are popular for search engines because a large number of search queries return the same data for long periods of time.
 These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache \cite{designTradeOffsSearchEngine}.
 In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined \cite{designTradeOffsSearchEngine}.
-Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches \cite{cacheAdmissionPolicies}\cite{designTradeOffsSearchEngine}.
+Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches \cite{cacheAdmissionPolicies, designTradeOffsSearchEngine}.
 
 \subsubsection{Implementing in an Application}
 Many approaches have been proposed for how to implement caching strategies in web application code.
 The most straightforward method is to explicitly get, set, and invalidate caches wherever they are needed in the application.
-However, this is tedious and error-prone \cite{keyBasedCacheExpiration}\cite{triggerBasedORM}.
+However, this is tedious and error-prone \cite{keyBasedCacheExpiration, triggerBasedORM}.
 A preferable alternative is to have caching built directly into the underlying application code.
 For example, Ruby on Rails provides a very rich data model that handles most of the caching details behind the scenes \cite{keyBasedCacheExpiration}.
 
@@ -342,7 +342,7 @@ This allows frequently changing data to have a shorter time to live and infreque
 
 \subsection{Determining what to cache}
 Some research has been done looking into what data improves the effectiveness of the cache.
-Many sources propose that fragments of HTML are the most useful data to cache \cite{comparisonOfCachingSolutions}\cite{scalableConsistentCaching}.
+Many sources propose that fragments of HTML are the most useful data to cache \cite{comparisonOfCachingSolutions, scalableConsistentCaching}.
 A cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store \cite{howBasecampGotSoFast}.
 
 Baeza-Yates et al. proposed that enforcing cache admission policies is a valuable way to improve hit ratio \cite{cacheAdmissionPolicies}.
