@@ -260,16 +260,18 @@ The advantages to this approach are that it's simple to understand, straightforw
 
 \section{Related Work}
 \subsection{Research Challenges}
-Most research is focused on addressing two core challenges with caching, the first of which is cache coherency.
+Most research is focused on addressing two core challenges with caching: cache coherency and ease-of-use.
 In some cases maintaining cache coherency is trivial because there is only one cache associated with the underlying data.
 However, with more complex data the situation is much more difficult.
 There may be dependencies between objects which means that multiple caches need to be invalidated at the same time.
 To further complicate things the dependencies between objects may be dynamic and must be resolved at run time on a per object basis.
 This is very common for Web 2.0 sites that are driven by user-generated content.
 
-Another research challenge is how to make the caching system easy to use for developers.
+The second core caching challenge is ease-of-use.
 The problem is that manually controlling the cache is tedious and error-prone.
-The idea is that this can be remedied by putting in place a system that transparently handles all caching operations which leaves the developer to write the more meaningful code.
+Leaving it up to the application developer to correctly {\tt get}, {\tt set}, and {\tt delete} caches results in an ad-hoc caching strategy.
+Most research regarding ease-of-use focuses on developing a system that transparently handles all caching operations.
+This leaves the developer to write application-specific code instead of caching boilerplate.
 
 \subsection{Incorporating Cache}
 \subsubsection{Caching Technologies}
