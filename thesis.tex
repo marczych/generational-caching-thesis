@@ -277,13 +277,13 @@ This leaves the developer to write application-specific code instead of caching 
 \subsubsection{Caching Technologies}
 Most web application caching research revolves around caching strategies.
 It turns out that the underlying cache daemon is largely irrelevant.
-Memcached is by far the most popular web caching system; it is currently deployed by Facebook, Wikipedia, YouTube, and countless others \cite{memcachedDotOrg}.
+{\textsf Memcached} is by far the most popular web caching system; it is currently deployed by Facebook, Wikipedia, YouTube, and countless others \cite{memcachedDotOrg}.
 
 The exception to this trend is a paper that proposes an alternative called SQLCached \cite{sqlCached}.
-This tool offers a few things that memcached doesn't: complex data types and rich querying for retrieval and invalidation.
+This tool offers a few things that {\textsf Memcached} doesn't: complex data types and rich querying for retrieval and invalidation.
 This is possible because SQLCached uses SQLite as its caching mechanism.
 
-Memcached is an example of a dynamic cache daemon.
+{\textsf Memcached} is an example of a dynamic cache daemon.
 There are also static caches that are only updated periodically and are not modified directly by the web application.
 Static caches are popular for search engines because a large number of search queries return the same data for long periods of time.
 These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache \cite{designTradeOffsSearchEngine}.
@@ -358,15 +358,15 @@ There has been research into least likely to be used (LLU) which is an optimal p
 
 \section{Memcached}
 ``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering.''\cite{memcachedDotOrg}
-There are two main operations in Memcached: {\tt get} and {\tt set}.
+There are two main operations in {\textsf Memcached}: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
 If the data is in the cache it is returned to the caller, otherwise the result is empty which indicates that the application must retrieve the data elsewhere.
-Data is added to Memcached by calling {\tt set} with a cache key, expiration time, and the data being stored in the cache.
+Data is added to {\textsf Memcached} by calling {\tt set} with a cache key, expiration time, and the data being stored in the cache.
 Another specialty command is {\tt getMulti} which is used to retrieve multiple keys in one operation.
 This is used to improve client performance by reducing the network overhead associated with retrieving many keys in succession.
-All Memcached operations are constant time ({\tt O(1)}) with respect to the number of elements stored in it.
+All {\textsf Memcached} operations are constant time ({\tt O(1)}) with respect to the number of elements stored in it.
 
-There are three ways for cached data to be removed from Memcached.
+There are three ways for cached data to be removed from {\textsf Memcached}.
 The expire time the data was set with determines the maximum lifespan of the cache for which it is valid.
 Once the data has expired it is no longer returned for {\tt get} requests although the data is not immediately removed from memory.
 Before data has expired, however, items can be evicted due to memory pressure.
@@ -375,18 +375,18 @@ Expired items are evicted first if any are found.
 If not the LRU policy is used to select a key to evict.
 Finally, cache entries can also be removed by performing {\tt delete} requests and providing the key that identifies the data to be deleted.
 
-To reduce the effects of memory fragmentation, Memcached employs a technique called slab allocation.
-The total memory available to Memcached is partitioned into 1MB pages.
+To reduce the effects of memory fragmentation, {\textsf Memcached} employs a technique called slab allocation.
+The total memory available to {\textsf Memcached} is partitioned into 1MB pages.
 Pages are assigned to slab-classes on an as-needed basis.
 Slab-classes determine the maximum size of data to be stored in the slab and consequently the size of chunks in pages assigned to the slab-class.
-When storing data in Memcached, the slab-class with the smallest chunk size that the data can fit in is used.
+When storing data in {\textsf Memcached}, the slab-class with the smallest chunk size that the data can fit in is used.
 Any remaining space in the chunk cannot be used to store any other data and therefore ends up being wasted space.
 However, the amount of space wasted in slab allocation is less than a naive implementation which results in memory fragmentation. % TODO: naive needs oomlaut(sp?)?
 All replacement algorithms operate on a per-slab-class basis.
 
-Memcached is distributed in nature.
-Adding more servers to a web application involves adding the new Memcached instance's IP address and port to the list of servers that the Memcached client library uses.
-Keys map to exactly one server so the total memory available in the Memcached cluster is the sum of memory available on each instance
+{\textsf Memcached} is distributed in nature.
+Adding more servers to a web application involves adding the new {\textsf Memcached} instance's IP address and port to the list of servers that the {\textsf Memcached} client library uses.
+Keys map to exactly one server so the total memory available in the {\textsf Memcached} cluster is the sum of memory available on each instance
 The client library performs consistent hashing on any key lookups to determine which server in the cluster to send the request to.
 The result is that adding and removing servers doesn't drastically impact hit rate because the majority of keys map to the same servers before and after the change.
 
@@ -449,7 +449,7 @@ For this call a flag is passed to {\tt findAllCached} that indicates that only t
 Otherwise all other meta data would be loaded which is exactly what the first {\tt findAllCached} does.
 The recursive call constructs a cache key using only the primary key to avoid infinite recursion.
 
-The Memcached operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential memcached {\tt get}s.
+The {\textsf Memcached} operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential {\textsf Memcached} {\tt get}s.
 All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
 The uncached objects are then cached for later use.
 
@@ -478,8 +478,8 @@ A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 
 The second caching function we wrote is {\tt batchCache} which is designed for caching lots of fragments of HTML.
 The most common use case for it is rendering a list of objects one after the other e.g. search results.
-{\tt batchCache} is better than {\tt cacheStart} and {\tt cacheEnd} for this circumstance because of the network overhead for sequential Memcached calls.
-This is especially true for fragments of HTML whose generation time is close to or less than the average time of a Memcached {\tt get}.
+{\tt batchCache} is better than {\tt cacheStart} and {\tt cacheEnd} for this circumstance because of the network overhead for sequential {\textsf Memcached} calls.
+This is especially true for fragments of HTML whose generation time is close to or less than the average time of a {\textsf Memcached} {\tt get}.
 
 {\tt batchCache} accepts a mapping of string cache key to any type of data.
 The cache keys are used in conjunction with an additional string similar to {\tt cacheStart} to check the cache for HTML.
@@ -530,8 +530,8 @@ Targetted traffic on the other hand has increased traffic to a small subset of c
 This simulates special events such as press and social media where a page goes viral for a short amount of time.
 Both types of traffic are realistic and are useful measures for the effectiveness of caching strategies.
 
-The contents of the database and memcached must be the same at the start of the experiments.
-The contents of memcached can be flushed to ensure a consistent repeatable experiment.
+The contents of the database and {\textsf Memcached} must be the same at the start of the experiments.
+The contents of {\textsf Memcached} can be flushed to ensure a consistent repeatable experiment.
 However, this setup isn't very realistic because the contents of cache is never completely empty in production and may skew results depending on differences in the caching algorithms.
 To mitigate this issue, experiments can be run for a period of time before statistics are collected to make the contents of cache more realistic.
 
