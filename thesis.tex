@@ -362,7 +362,7 @@ There has been research into least likely to be used (LLU) which is an optimal p
 
 
 \section{Memcached}
-``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering.''\cite{memcachedDotOrg}
+In the words of its creators, \begin{quotation}``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering.\cite{memcachedDotOrg}''\end{quotation}
 There are two main operations in {\textsf Memcached}: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
 If the data is in the cache it is returned to the caller, otherwise the result is empty which indicates that the application must retrieve the data elsewhere.
