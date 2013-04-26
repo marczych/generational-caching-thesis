@@ -145,7 +145,6 @@ One such website facing server scaling problems is {\textsf iFixit}.
 {\textsf iFixit}'s step-by-step guides and question and answer platform are driven heavily by user-generated content.
 All repair guides on iFixit are publicly editable and contain rich revision history.
 This includes a patrolling system in which edits by unprivileged users are pending until a privileged user accepts them.
-% TODO: Explain how "all kinds of folks" ask questions on Answers and members of the community answer and vote on them?
 The consequence of these features is that all of the content is stored in a database.
 {\textsf iFixit} currently employs an ad hoc caching strategy that relieves some server load, however, the effectiveness of the cache can be greatly improved.
 
@@ -246,15 +245,26 @@ The expiration time is typically on the order of minutes to hours depending on t
 iFixit uses two strategies for cache invalidation that are described below.
 
 The first strategy relies on the cache's expiration time to update the entry with fresh data.
-After the specified amount of time the cache is no longer valid so the application is forced to regenerate it and set it in the cache for later use.
+After the specified amount of time, the cache is no longer valid so the application is forced to regenerate it and set it in the cache for later use.
 The cache is never invalidated by the application when the underlying content changes.
 This strategy is particularly useful for data that isn't required to be correct such as related content, approximate totals, etc.
 
-The second strategy used by iFixit involves deleting all relevant cache entries whenever data is changed.
+The second strategy used by iFixit involves deleting cache entries whenever relevant data is changed.
 It is up to the developer to find the appropriate places to delete cache entries when certain events occur.
-The advantages to this approach are that it's simple to understand, straightforward to implement, and if done correctly ensures that fresh data is served.
+The advantages to this approach are that it's simple to understand, straightforward to implement, and ensures that fresh data is served if done correctly.
 
-% TODO: Discuss weaknesses. Justify needs for your work!
+There are two major problems with these techniques.
+The first of which is that the burden of cache invalidation is on the developer.
+This is because the developer must decide what data to cache and spend time finding all the places where the caches should be invalidated.
+Additionally, this is error-prone because software projects are constantly changing and the fragile caching setup could break.
+
+The next problem is that caching HTML is difficult because each cache entry must be invalidated when data changes.
+The more cache entries that depend on data the harder it is to ensure that they will all be invalidated at the appropriate time.
+This is especially true for fragments of HTML because the cache entries are typically defined in front-end templates but must be invalidated from backend code.
+In general, the difficulty of cache invalidation for any given data is proportional to the number of cache entries dependent on that data and how fine-grained those cache entries are.
+As a result, iFixit doesn't currently cache any HTMl fragments.
+
+% TODO: Discuss weaknesses. Justify needs for your work! (Mainly done but might want to specify why caching is still needed.)
 
 % TODO: Consider discussing varnish and page cache.
 
