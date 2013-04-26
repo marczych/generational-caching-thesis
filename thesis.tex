@@ -203,6 +203,7 @@ AWS services used include Elastic Cloud Compute (EC2) for server instances, S3 f
 \section{Caching}
 
 \subsection{Terminology}
+% TODO: Explain ORMs.
 At a high level a cache is used to store results of operations so future requests can be processed faster.
 A cache is typically not the primary storage location for data.
 In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
@@ -290,10 +291,6 @@ Most web application caching research revolves around caching strategies.
 It turns out that the underlying cache daemon is largely irrelevant.
 {\textsf Memcached} is by far the most popular web caching system; it is currently deployed by Facebook, Wikipedia, YouTube, and countless others \cite{memcachedDotOrg}.
 
-The exception to this trend is a paper that proposes an alternative called SQLCached \cite{sqlCached}.
-This tool offers a few things that {\textsf Memcached} doesn't: complex data types and rich querying for retrieval and invalidation.
-This is possible because SQLCached uses SQLite as its caching mechanism.
-
 {\textsf Memcached} is an example of a dynamic cache daemon.
 There are also static caches that are only updated periodically and are not modified directly by the web application.
 Static caches are popular for search engines because a large number of search queries return the same data for long periods of time.
@@ -301,16 +298,20 @@ These queries can be determined by analyzing historical data which would be diff
 In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined \cite{designTradeOffsSearchEngine}.
 Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches \cite{cacheAdmissionPolicies, designTradeOffsSearchEngine}.
 
+The exception to this trend is Voras and Zagar's {\textsf Memcached} alternative named SQLCached \cite{sqlCached}.
+This tool offers a few things that {\textsf Memcached} doesn't: complex data types and rich querying for retrieval and invalidation.
+This is possible because SQLCached uses SQLite as its caching mechanism.
+
 \subsubsection{Implementing in an Application}
 Many approaches have been proposed for how to implement caching strategies in web application code.
 The most straightforward method is to explicitly get, set, and invalidate caches wherever they are needed in the application.
 However, this is tedious and error-prone \cite{keyBasedCacheExpiration, triggerBasedORM}.
 A preferable alternative is to have caching built directly into the underlying application code.
-For example, Ruby on Rails provides a very rich data model that handles most of the caching details behind the scenes \cite{keyBasedCacheExpiration}.
+For example, Ruby on Rails, a popular web framework, provides a very rich data model that handles most of the caching details behind the scenes \cite{keyBasedCacheExpiration}.
 
-% TODO: Rewrite.
-Another Object Relational Model (ORM) has been developed for the Django web framework that automatically handles all necessary caching operations \cite{triggerBasedORM}.
-The project, CacheGenie, provides Python callbacks to database triggers that will be called when queries are run on the database. This allows the tool to update and/or invalidate caches depending on the queries.
+Gupta, Zeldovich, and Madden developed Cache Genie, an ORM for the Django web framework that automatically handles all necessary caching operations \cite{triggerBasedORM}.
+The project provides Python callbacks to database triggers that are called when queries are run on the database.
+This allows the tool to update and/or invalidate caches depending on the queries.
 The major advantage of this approach is that no matter how the data is changed the cache remains consistent because cache invalidation occurs at the data layer.
 Other projects have used database triggers with similar results \cite{scalableConsistentCaching}.
 
@@ -321,16 +322,13 @@ This technique improves cache hit rate because cache misses will only happen as 
 However, this technique only works for simple data types.
 Any other objects that depend on the current object being saved can't be updated in the cache because that data isn't directly accessible and will require a database lookup.
 
-\subsubsection{Timestamps}
-Bai and Junqueira proposed a system that does not invalidate caches but rather determines cache freshness upon cache hit \cite{cacheInvalidationWebSearch}.
-This is done by including a timestamp corresponding to the generation time in the cached object.
-Upon cache hit the timestamp is compared against a query index that is updated as the underlying data is updated.
-
-% TODO: Make a big deal out of this section since it's the core technology used in the implementation. Make a section specifically for it?
-Another caching technique is referred to as key-based cache expiration \cite{keyBasedCacheExpiration} or generational caching \cite{generationalCaching}.
-The idea is that a timestamp corresponding to the last time the object was updated is included in the key for any caches that depend on it.
+\subsubsection{Generational Caching}
+Another caching technique is referred to as key-based cache expiration \cite{keyBasedCacheExpiration} and generational caching \cite{generationalCaching}.
+The idea is that a timestamp, which corresponds to the last time the object was updated, is included in the key for any caches that depend on it.
 The timestamp is updated once the object is modified thus invalidating all necessary cache keys.
 This approach also updates the timestamps of any objects that depend on the modified object.
+Generational caching makes fine-grained caching trivial because it isn't necessary to enumerate all potential cache keys.
+Cache entries can be defined arbitrarily and as long as the cache key contains the timestamp it will be invalidated when the underlying object is updated.
 This technique is employed by 37Signals and various other websites \cite{keyBasedCacheExpiration}.
 
 \subsubsection{Prefetching}
@@ -339,17 +337,14 @@ This technique involves caching content before it is requested so it can be retr
 Generally, an event triggers the precaching system to intelligently decide what content to prefetch in the hopes that the data will be requested soon.
 This approach takes advantage of spatial locality.
 
-A caching system was developed that addresses the problem of cache stampedes \cite{scalableConsistentCaching}.
-Rather than invalidating any necessary caches, the content can be prefetched and the cache's value will be updated in place using write-through caching.
+Challenger, Iyengar, and Dantzig developed a caching system that addresses the problem of cache stampedes \cite{scalableConsistentCaching}.
+Rather than invalidating any necessary caches when data changes, the fresh content can be prefetched and the cache's value will be updated in place using write-through caching.
 This approach avoids cache misses at the cost of slight data staleness because the old copy will still be served while the fresh copy is being prefetched.
 The website for the 1998 Winter Olympic games deployed this caching technique and reached nearly 100\% cache hits \cite{scalableConsistentCaching}.
+Their system uses a dependency graph to determine which cache entries need to be updated when any given data is modified  \cite{scalableConsistentCaching}.
+When an object is updated, all of the caches that have an edge with that object need to be prefetched along with the original object.
 
-% TODO: Combine with previous paragraph. Or rather link the two together since it's the same paper.
-Challenger, Iyengar, and Dantzig describe a system that constructs a dependency graph that is used when invalidating caches \cite{scalableConsistentCaching}.
-When an object is updated, all of the caches that have an edge with that object are invalidated along with the original object.
-This approach is similar to using timestamps in that the objects whose timestamps are updated when another object is updated represent an edge in a dependency graph.
-
-Another paper exploits the cache expiration time to invalidate caches \cite{refreshingPerspectiveSearch}.
+Cambazoglu, Junqueira, and Plachouras use the cache expiration time to invalidate caches \cite{refreshingPerspectiveSearch}.
 The idea is that serving slightly stale data isn't terrible for search engines.
 Additionally, the rate of change can be determined for a given query and can be factored into the expiration time.
 This allows frequently changing data to have a shorter time to live and infrequently changing data to have a longer time to live.
@@ -363,15 +358,17 @@ A cache hit for HTML allows the server to avoid generating the HTML as well as r
 Baeza-Yates et al. suggested that enforcing cache admission policies is a valuable way to improve hit ratio \cite{cacheAdmissionPolicies}.
 The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
 Detecting such queries and leaving them out of the cache leaves more room for caching results of frequently accessed queries thus increasing cache hit ratio.
-However, another paper claimed that the eviction policy doesn't have a significant impact on cache hit ratio \cite{refreshingPerspectiveSearch}.
+However, Cambazoglu, Junqueira, and Plachouras claim that the eviction policy doesn't have a significant impact on cache hit ratio \cite{refreshingPerspectiveSearch}.
 This is because caches can easily be expanded to hold more entries and therefore items rarely get evicted to begin with \cite{refreshingPerspectiveSearch}.
 
+% TODO: Delete?
 Despite this claim, research has been done investigating eviction policies.
 Least recently used (LRU) is a commonly used eviction policy.
 There has been research into least likely to be used (LLU) which is an optimal policy that can be approximated by various techniques.
 
 
 \section{Memcached}
+% TODO: Explain LRU.
 In the words of its creators, \begin{quotation}``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering.\cite{memcachedDotOrg}''\end{quotation}
 There are two main operations in {\textsf Memcached}: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
@@ -396,7 +393,7 @@ Pages are assigned to slab-classes on an as-needed basis.
 Slab-classes determine the maximum size of data to be stored in the slab and consequently the size of chunks in pages assigned to the slab-class.
 When storing data in {\textsf Memcached}, the slab-class with the smallest chunk size that the data can fit in is used.
 Any remaining space in the chunk cannot be used to store any other data and therefore ends up being wasted space.
-However, the amount of space wasted in slab allocation is less than a naive implementation which results in memory fragmentation. % TODO: naive needs oomlaut(sp?)?
+However, the amount of space wasted in slab allocation is less than a naive implementation which results in memory fragmentation.
 All replacement algorithms operate on a per-slab-class basis.
 
 {\textsf Memcached} is distributed in nature.
