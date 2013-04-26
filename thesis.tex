@@ -402,6 +402,8 @@ In this chapter, we explain in depth the caching solution we analyze in Chapter 
 In section 3.1 we explain the high-level design of the generational caching strategy implemented for iFixit.
 In section 3.2 we go over the details of implementing the design in iFixit's code base.
 
+% TODO: Reiterate Requirements.
+
 \section{Design}
 \subsection{What is being cached}
 This section describes the three primary types of data that are cached.
@@ -411,17 +413,19 @@ The second data type are fragments of HTML.
 These are typically generated from data retrieved from the database and need to be invalidated anytime the underlying data has changed.
 Finally, results of ad hoc queries are also cached.
 These typically are used in addition to the ORM to gather more complex data.
+%TODO: Picture?
 
 \subsection{ORM Caching}
 The primary key uniquely identifies a tuple in the database and can be used with the ORM to select a single record.
-Once the record is loaded other data not contained in the primary table is loaded and then the entire object is cached.
+Once the record is loaded, other data not contained in the primary table is loaded and then the entire object is cached.
 By default, the cache key for objects is just the primary key.
 
 Generational caching relies on a value in the primary table being updated whenever any other data in the table is updated.
 This value can be incorporated into the object's cache key which ensures that the value in the cache will always be correct for that cache key.
 If the data changes then it has a different cache key so the other caches don't need to be invalidated.
-To accomplish this individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
-In most cases the additional columns not known before retrieving the object in which case they must be retrieved before checking the cache.
+To accomplish this, individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
+In most cases the additional columns are not known before retrieving the object.
+In this case, they must be retrieved before checking the cache.
 To avoid hitting the database as much as possible, the entire database tuple that is used to generate the cache key is cached using its primary key.
 This cache is deleted anytime the object is saved.
 
@@ -445,18 +449,21 @@ A list of primary keys is provided and the ORM selects those tuples from the dat
 In order to add caching to {\tt findAllByKey} we add a wrapper method called {\tt findAllCached}.
 At a very high-level, this method constructs cache keys for the given primary keys and performs a cache get on them.
 Any objects that were not cached are retrieved from the database using {\tt findAllByKey} and are then stored in the cache.
+% TDOO: Picture.
 
 We allow classes derived from the ORM to specify which columns in addition to the primary key to include in the cache key.
 More data must be retrieved from the database to construct the cache key if only the primary keys are provided to {\tt findAllCached} and the derived class specifies additional cache key columns.
 Fortunately we already have a method, {\tt findAllBykey}, that retrieves objects based on their primary key that can be used to retrieve more data.
 However, we can do one better and cache that operation by using {\tt findAllCached} instead.
-For this call a flag is passed to {\tt findAllCached} that indicates that only the primary table should be loaded.
-Otherwise all other meta data would be loaded which is exactly what the first {\tt findAllCached} does.
+For this call, a flag is passed to {\tt findAllCached} that indicates that only the primary table should be loaded.
+Otherwise, all other meta data would be loaded which is exactly what the first {\tt findAllCached} does.
 The recursive call constructs a cache key using only the primary key to avoid infinite recursion.
 
 The {\textsf Memcached} operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential {\textsf Memcached} {\tt get}s.
 All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
 The uncached objects are then cached for later use.
+
+% TODO: Indicate what functionality existed previously and what I added (overview of cache APIs).
 
 \subsection{Caching HTML}
 We also cache fragments of HTML because template code can be fairly slow and unperformant.
