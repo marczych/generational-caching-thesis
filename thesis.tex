@@ -204,10 +204,11 @@ AWS services used include Elastic Cloud Compute (EC2) for server instances, S3 f
 At a high level, a cache is used to store results of operations so future requests can be processed faster.
 A cache is typically not the primary storage location for data.
 In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
-A cache hit occurs when the data that is being requested is in the cache and no further action is required.
-A cache miss occurs when the data that is being requested is not in the cache and it must be retrieved from elsewhere.
+A cache entry is a single piece of data stored in the cache that is uniquely identified.
+A cache hit occurs when the requested cache entry is in the cache and no further action is required.
+A cache miss occurs when the requested cache entry is not in the cache and it must be retrieved from its primary location.
 
-Caching is effective because retrieving data from the cache is much faster than retrieving it from its persistent location.
+Caching is effective because cache lookups are much faster than retrieving data from its persistent location.
 Additionally, caching exploits locality.
 Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
 Spatial locality is the idea that items in nearby storage locations are referenced in close proximity to one another.
@@ -274,7 +275,7 @@ If the object is not in the cache then it is retrieved and stored in the cache f
 The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
 iFixit uses two strategies for cache invalidation that are described below.
 
-The first strategy relies on the cache's expiration time to update the entry with fresh data.
+The first strategy relies on the cache entry's expiration time to update it with fresh data.
 After the specified amount of time, the cache is no longer valid so the application is forced to regenerate it and set it in the cache for later use.
 The cache is never invalidated by the application when the underlying content changes.
 This strategy is particularly useful for data that isn't required to be correct such as related content, approximate totals, etc.
@@ -285,7 +286,7 @@ The advantages to this approach are that it's simple to understand, straightforw
 
 There are two major problems with these techniques.
 The first of which is that the burden of cache invalidation is on the developer.
-This is because the developer must decide what data to cache and spend time finding all the places where the caches should be invalidated.
+This is because the developer must decide what data to cache and spend time finding all the places where the cache entries should be invalidated.
 Additionally, this is error-prone because software projects are constantly changing and the fragile caching setup could break.
 
 The next problem is that caching HTML is difficult because each cache entry must be invalidated when data changes.
@@ -301,15 +302,15 @@ As a result, iFixit doesn't currently cache any HTMl fragments.
 \section{Related Work}
 \subsection{Research Challenges}
 Most research is focused on addressing two core challenges with caching: cache coherency and ease-of-use.
-In some cases maintaining cache coherency is trivial because there is only one cache associated with the underlying data.
+In some cases maintaining cache coherency is trivial because there is only one cache entry associated with the underlying data.
 However, with more complex data the situation is much more difficult.
-There may be dependencies between objects which means that multiple caches need to be invalidated at the same time.
+There may be dependencies between objects which means that multiple cache entries need to be invalidated at the same time.
 To further complicate things the dependencies between objects may be dynamic and must be resolved at run time on a per object basis.
 This is very common for Web 2.0 sites that are driven by user-generated content.
 
 The second core caching challenge is ease-of-use.
 The problem is that manually controlling the cache is tedious and error-prone.
-Leaving it up to the application developer to correctly {\tt get}, {\tt set}, and {\tt delete} caches results in an ad-hoc caching strategy.
+Leaving it up to the application developer to correctly {\tt get}, {\tt set}, and {\tt delete} cache entries results in an ad-hoc caching strategy.
 Most research regarding ease-of-use focuses on developing a system that transparently handles all caching operations.
 This leaves the developer to write application-specific code instead of caching boilerplate.
 
@@ -339,21 +340,21 @@ For example, Ruby on Rails, a popular web framework, provides a very rich data m
 
 Gupta, Zeldovich, and Madden developed Cache Genie, an ORM for the Django web framework that automatically handles all necessary caching operations \cite{triggerBasedORM}.
 The project provides Python callbacks to database triggers that are called when queries are run on the database.
-This allows the tool to update and/or invalidate caches depending on the queries.
+This allows the tool to update and/or invalidate cache entries depending on the queries.
 The major advantage of this approach is that no matter how the data is changed the cache remains consistent because cache invalidation occurs at the data layer.
 Other projects have used database triggers with similar results \cite{scalableConsistentCaching}.
 
 \subsection{Cache Consistency}
 \subsubsection{Write-Through Caching}
 Write-through caching is a technique that involves saving the data in the cache at the same time as it is being saved in the persistent store \cite{writeThroughCaching}.
-This technique improves cache hit rate because cache misses will only happen as a result of cached values being evicted or a server failure.
+This technique improves cache hit rate because cache misses will only happen as a result of cache entries being evicted or a server failure.
 However, this technique only works for simple data types.
 Any other objects that depend on the current object being saved can't be updated in the cache because that data isn't directly accessible and will require a database lookup.
 
 \subsubsection{Generational Caching}
 Another caching technique is referred to as key-based cache expiration \cite{keyBasedCacheExpiration} and generational caching \cite{generationalCaching}.
-The idea is that a timestamp, which corresponds to the last time the object was updated, is included in the key for any caches that depend on it.
-The timestamp is updated once the object is modified thus invalidating all necessary cache keys.
+The idea is that a timestamp, which corresponds to the last time the object was updated, is included in the key for any cache entries that depend on it.
+The timestamp is updated once the object is modified thus invalidating all necessary cache entries.
 This approach also updates the timestamps of any objects that depend on the modified object.
 Generational caching makes fine-grained caching trivial because it isn't necessary to enumerate all potential cache keys.
 Cache entries can be defined arbitrarily and as long as the cache key contains the timestamp it will be invalidated when the underlying object is updated.
@@ -366,13 +367,13 @@ Generally, an event triggers the precaching system to intelligently decide what 
 This approach takes advantage of spatial locality.
 
 Challenger, Iyengar, and Dantzig developed a caching system that addresses the problem of cache stampedes \cite{scalableConsistentCaching}.
-Rather than invalidating any necessary caches when data changes, the fresh content can be prefetched and the cache's value will be updated in place using write-through caching.
+Rather than invalidating any necessary cache entries when data changes, the fresh content can be prefetched and the cache's value will be updated in place using write-through caching.
 This approach avoids cache misses at the cost of slight data staleness because the old copy will still be served while the fresh copy is being prefetched.
 The website for the 1998 Winter Olympic games deployed this caching technique and reached nearly 100\% cache hits \cite{scalableConsistentCaching}.
 Their system uses a dependency graph to determine which cache entries need to be updated when any given data is modified \cite{scalableConsistentCaching}.
-When an object is updated, all of the caches that have an edge with that object need to be prefetched along with the original object.
+When an object is updated, all of the cache entries that have an edge with that object need to be prefetched along with the original object.
 
-Cambazoglu, Junqueira, and Plachouras use the cache expiration time to invalidate caches \cite{refreshingPerspectiveSearch}.
+Cambazoglu, Junqueira, and Plachouras use the cache expiration time to invalidate cache entries \cite{refreshingPerspectiveSearch}.
 The idea is that serving slightly stale data isn't terrible for search engines.
 Additionally, the rate of change can be determined for a given query and can be factored into the expiration time.
 This allows frequently changing data to have a shorter time to live and infrequently changing data to have a longer time to live.
@@ -459,12 +460,12 @@ By default, the cache key for objects is just the primary key.
 
 Generational caching relies on a value in the primary table being updated whenever any other data in the table is updated.
 This value can be incorporated into the object's cache key which ensures that the value in the cache will always be correct for that cache key.
-If the data changes then it has a different cache key so the other caches don't need to be invalidated.
+If the data changes then it has a different cache key so the other cache entries don't need to be invalidated.
 To accomplish this, individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
 In most cases the additional columns are not known before retrieving the object.
 In this case, they must be retrieved before checking the cache.
 To avoid hitting the database as much as possible, the entire database tuple that is used to generate the cache key is cached using its primary key.
-This cache is deleted anytime the object is saved.
+This cache entry is deleted anytime the object is saved.
 
 With the entire database tuple we can construct the full cache key and check for its presence in the cache.
 If it exists in the cache then it can be returned to the caller immediately.
@@ -503,7 +504,7 @@ The uncached objects are then cached for later use.
 % TODO: Indicate what functionality existed previously and what I added (overview of cache APIs).
 
 \subsection{Caching HTML}
-We also cache fragments of HTML because template code can be fairly slow and unperformant.
+We also cache fragments of HTML because HTML generation can be fairly slow and unperformant.
 To help facilitate this, we implemented a few different caching functions for use in HTML templates.
 
 The first set of functions is {\tt cacheStart} and {\tt cacheEnd} which are used for caching a single block of HTML.
@@ -557,7 +558,7 @@ This could be the result of an optimistic prefetching algorithm that caches valu
 The pivotal question is regarding whether or not the increased server load is worth the increased hit rate.
 
 Other criteria, such as ease of use and cache freshness, are harder to measure and validate.
-Cache freshness involves measuring how long a stale cache is served after there is a fresh version available.
+Cache freshness involves measuring how long a stale cache entry is served after there is a fresh version available.
 In particular, some amount of cache staleness is acceptable but the line is blurred especially in the presence of performance gains.
 
 Ease of use is even more difficult to measure.
