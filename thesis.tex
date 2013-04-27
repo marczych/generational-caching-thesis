@@ -369,7 +369,7 @@ Challenger, Iyengar, and Dantzig developed a caching system that addresses the p
 Rather than invalidating any necessary caches when data changes, the fresh content can be prefetched and the cache's value will be updated in place using write-through caching.
 This approach avoids cache misses at the cost of slight data staleness because the old copy will still be served while the fresh copy is being prefetched.
 The website for the 1998 Winter Olympic games deployed this caching technique and reached nearly 100\% cache hits \cite{scalableConsistentCaching}.
-Their system uses a dependency graph to determine which cache entries need to be updated when any given data is modified  \cite{scalableConsistentCaching}.
+Their system uses a dependency graph to determine which cache entries need to be updated when any given data is modified \cite{scalableConsistentCaching}.
 When an object is updated, all of the caches that have an edge with that object need to be prefetched along with the original object.
 
 Cambazoglu, Junqueira, and Plachouras use the cache expiration time to invalidate caches \cite{refreshingPerspectiveSearch}.
@@ -389,14 +389,8 @@ Detecting such queries and leaving them out of the cache leaves more room for ca
 However, Cambazoglu, Junqueira, and Plachouras claim that the eviction policy doesn't have a significant impact on cache hit ratio \cite{refreshingPerspectiveSearch}.
 This is because caches can easily be expanded to hold more entries and therefore items rarely get evicted to begin with \cite{refreshingPerspectiveSearch}.
 
-% TODO: Delete?
-Despite this claim, research has been done investigating eviction policies.
-Least recently used (LRU) is a commonly used eviction policy.
-There has been research into least likely to be used (LLU) which is an optimal policy that can be approximated by various techniques.
-
 
 \section{Memcached}
-% TODO: Explain LRU.
 In the words of its creators, \begin{quotation}``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering.\cite{memcachedDotOrg}''\end{quotation}
 There are two main operations in {\textsf Memcached}: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
@@ -412,7 +406,8 @@ Once the data has expired it is no longer returned for {\tt get} requests althou
 Before data has expired, however, items can be evicted due to memory pressure.
 This occurs when new items are being added to the cache and there isn't any room.
 Expired items are evicted first if any are found.
-If not the LRU policy is used to select a key to evict.
+If not, the Least Recently Used (LRU) policy is used to select a cache entry to evict.
+In other words, the cache entry that has last been referenced the longest ago is evicted.
 Finally, cache entries can also be removed by performing {\tt delete} requests and providing the key that identifies the data to be deleted.
 
 To reduce the effects of memory fragmentation, {\textsf Memcached} employs a technique called slab allocation.
