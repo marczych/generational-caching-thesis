@@ -200,11 +200,8 @@ However, this machine is used purely as a backup and is not used to improve perf
 All of this is built using Amazon Web Services (AWS).
 AWS services used include Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront, a Content Delivery Network (CDN), for serving content out of S3, and Elastic Block Store (EBS) for raw block storage on each server instance.
 
-\section{Caching}
-
-\subsection{Terminology}
-% TODO: Explain ORMs.
-At a high level a cache is used to store results of operations so future requests can be processed faster.
+\section{Terminology}
+At a high level, a cache is used to store results of operations so future requests can be processed faster.
 A cache is typically not the primary storage location for data.
 In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
 A cache hit occurs when the data that is being requested is in the cache and no further action is required.
@@ -236,6 +233,38 @@ A cache stampede can occur when a cache that is frequently requested is invalida
 There are then a series of cache misses followed by a series of duplicated requests to the backing store followed by a series of cache sets.
 These should be avoided if possible because of the redundant work done by each request.
 If not handled properly, this event alone can crash web sites.
+
+% TODO: This might not really belong here.
+The ActiveRecord pattern is a common technique used in web applications to interact with the data stored in a database.
+In the host language, the developer creates classes that represent tables in the database.
+This becomes an object-relational mapping (ORM) in that the properties of the class represent columns in the database.
+Rows can be inserted, updated, and removed by calling the {\tt insert}, {\tt update}, {\tt delete} methods on the object, respectively.
+This is demonstrated in Figure ~\ref{fig:activeRecordExample}.
+
+% TODO: Make code single spaced.
+\begin{figure}[h]
+\begin{minted}{php}
+<?php
+function createUser($userid, $name, $email) {
+   $user = new User();
+   $user->userid = $userid;
+   $user->name = $name;
+   $user->email = $email;
+   $user->insert();
+}
+
+function getUser($userid) {
+   $user = User::find($userid);
+}
+?>
+\end{minted}
+\caption{Basic ActiveRecord example.}
+\label{fig:activeRecordExample}
+\end{figure}
+
+In this example, {\tt User} is a class that implements the ActiveRecord pattern.
+A new user is inserted into the database by creating a new {\tt User} object, assigning the properties of the object corresponding to the database columns, and calling {\tt insert}.
+This {\tt User} can later be retrieved by calling {\tt find}.
 
 
 \section{iFixit's Current Caching Strategy}
@@ -485,6 +514,7 @@ A call to {\tt cacheEnd} signals the end of the cached HTML section.
 This function closes output buffering, gets the contents of the buffer, caches it, and finally outputs the HTML to {\tt stdout}.
 A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 
+% TODO: Make code single spaced.
 \begin{figure}[h]
 \begin{minted}{php}
 <? if (!cacheStart($ormObject, 'view-all', CACHE_FOREVER)): ?>
