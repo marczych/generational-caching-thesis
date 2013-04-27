@@ -429,10 +429,17 @@ The result is that adding and removing servers doesn't drastically impact hit ra
 \chapter{Design and Implementation}
 \label{designAndImplementation}
 In this chapter, we explain in depth the caching solution we analyze in Chapter X.
+But first, we must reiterate the requirements for such a caching solution.
+
+The caching solution must be largely transparent to the developer.
+The developer should only be required to determine what data to cache, not how to cache it and invalidate it.
+It should also allow for finer-grained caching without added complexity.
+This will result in a performance improvement because more data will be cached and each cache entry can be invalidated separately.
+Otherwise, larger cache entries are invalidated as a whole even when a small amount of the data has changed.
+Finer-grained caching is particularly useful for caching fragments of HTML.
+
 In section 3.1 we explain the high-level design of the generational caching strategy implemented for iFixit.
 In section 3.2 we go over the details of implementing the design in iFixit's code base.
-
-% TODO: Reiterate Requirements.
 
 \section{Design}
 \subsection{What is being cached}
