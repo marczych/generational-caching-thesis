@@ -143,7 +143,7 @@ Because of this, server load becomes a real issue especially for the database ma
 One such website facing server scaling problems is {\textsf iFixit}.
 {\textsf iFixit} is a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
 {\textsf iFixit}'s step-by-step guides and question and answer platform are driven heavily by user-generated content.
-All repair guides on iFixit are publicly editable and contain rich revision history.
+All repair guides on {\textsf iFixit} are publicly editable and contain rich revision history.
 This includes a patrolling system in which edits by unprivileged users are pending until a privileged user accepts them.
 The consequence of these features is that all of the content is stored in a database.
 {\textsf iFixit} currently employs an ad hoc caching strategy that relieves some server load and decreases response time, however, the effectiveness of the cache can be greatly improved.
@@ -161,35 +161,35 @@ The rest of this thesis is organized as follows...
 
 \section{iFixit}
 \subsection{Data and Site Usage}
-iFixit's most popular content is their step-by-step repair guides.
-An iFixit guide consists of meta data about the guide such as title, summary, introduction, author, time required, and difficulty.
+{\textsf iFixit}'s most popular content is their step-by-step repair guides.
+An {\textsf iFixit} guide consists of meta data about the guide such as title, summary, introduction, author, time required, and difficulty.
 Additionally, each guide has an ordered list of steps associated it.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
 To avoid duplicating content, guides can also be included in other guides as prerequisites.
 The prerequisite guides' steps are included before the actual guide's steps.
 
-All of iFixit's content is dynamic.
+All of {\textsf iFixit}'s content is dynamic.
 That is to say that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
 Additionally, anyone can edit the content due to it being a wiki.
 
-iFixit certainly has a more read-heavy workload, however, writes are still fairly common.
-In particular, iFixit is known for its device ``teardowns.''
+{\textsf iFixit} certainly has a more read-heavy workload, however, writes are still fairly common.
+In particular, {\textsf iFixit} is known for its device ``teardowns.''
 These events consist of opening a brand new device as soon as it becomes available on the market.
-The opening process is documented and updated on iFixit's website in realtime.
+The opening process is documented and updated on {\textsf iFixit}'s website in realtime.
 These events attract thousands of visitors to the site in a short period of time.
 Because of this, the website must be able to handle a read-heavy workload while simultaneously writing to the same data.
 
-In addition to their main website, iFixit runs a Software as a Service (SaaS) platform for technical documentation platform to anyone who needs step-by-step instructions.
+In addition to their main website, {\textsf iFixit} runs a Software as a Service (SaaS) platform for technical documentation platform to anyone who needs step-by-step instructions.
 The general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
 
 The primary bottlneck is the database machine because it has to retrieve data for every incoming HTTP request.
 On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
 
 \subsection{Web Architecture}
-In this section we describe iFixit's production architecture, depicted in Figure ~\ref{fig:iFixitArchitecture}, at the time of this writing.
+In this section we describe {\textsf iFixit}'s production architecture, depicted in Figure ~\ref{fig:iFixitArchitecture}, at the time of this writing.
 
-iFixit runs two load balancers - one for iFixit and one for their SaaS.
-At any given time there are typically four to eight application machines that run iFixit's core software which is written in PHP.
+{\textsf iFixit} runs two load balancers - one for {\textsf iFixit} and one for their SaaS.
+At any given time there are typically four to eight application machines that run {\textsf iFixit}'s core software which is written in PHP.
 There is one master database machine running the Percona build of MySQL which handles all reads and writes.
 There is also one slave database machine that is asynchronously replicated from the master database using MySQL's built in replication.
 However, this machine is used purely as a backup and is not used to improve performance.
@@ -274,18 +274,18 @@ This {\tt User} can later be retrieved by calling {\tt find}.
 
 
 \section{iFixit's Current Caching Strategy}
-iFixit currently has a very ad hoc approach to caching.
+{\textsf iFixit} currently has a very ad hoc approach to caching.
 Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
 If the object is not in the cache then it is retrieved and stored in the cache for later use.
 The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
-iFixit uses two strategies for cache invalidation that are described below.
+{\textsf iFixit} uses two strategies for cache invalidation that are described below.
 
 The first strategy relies on the cache entry's expiration time to update it with fresh data.
 After the specified amount of time, the cache is no longer valid so the application is forced to regenerate it and set it in the cache for later use.
 The cache is never invalidated by the application when the underlying content changes.
 This strategy is particularly useful for data that isn't required to be correct such as related content, approximate totals, etc.
 
-The second strategy used by iFixit involves deleting cache entries whenever relevant data is changed.
+The second strategy used by {\textsf iFixit} involves deleting cache entries whenever relevant data is changed.
 It is up to the developer to find the appropriate places to delete cache entries when certain events occur.
 The advantages to this approach are that it's simple to understand, straightforward to implement, and ensures that fresh data is served if done correctly.
 
@@ -298,7 +298,7 @@ The next problem is that caching HTML is difficult because each cache entry must
 The more cache entries that depend on data the harder it is to ensure that they will all be invalidated at the appropriate time.
 This is especially true for fragments of HTML because the cache entries are typically defined in front-end templates but must be invalidated from backend code.
 In general, the difficulty of cache invalidation for any given data is proportional to the number of cache entries dependent on that data and how fine-grained those cache entries are.
-As a result, iFixit doesn't currently cache any HTMl fragments.
+As a result, {\textsf iFixit} doesn't currently cache any HTMl fragments.
 
 % TODO: Consider discussing varnish and page cache.
 
@@ -441,8 +441,8 @@ This will result in a performance improvement because more data will be cached a
 Otherwise, larger cache entries are invalidated as a whole even when a small amount of the data has changed.
 Finer-grained caching is particularly useful for caching fragments of HTML.
 
-In section 3.1 we explain the high-level design of the generational caching strategy implemented for iFixit.
-In section 3.2 we go over the details of implementing the design in iFixit's code base.
+In section 3.1 we explain the high-level design of the generational caching strategy implemented for {\textsf iFixit}.
+In section 3.2 we go over the details of implementing the design in {\textsf iFixit}'s code base.
 
 \section{Design}
 \subsection{What is being cached}
