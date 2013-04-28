@@ -84,11 +84,11 @@
 Web site scaling has been an issue since the inception of the web.
 The demand for user generated content and personalized web pages leads to storing all information in a database on the web server.
 Unfortunately, scaling the database to handle large amounts of traffic is still a problem many companies face.
-One such company is iFixit, a provider of free, publicly-editable repair manuals.
-Like many other websites, iFixit uses Memcached for caching to decrease database load and improve response time.
+One such company is {\textsf iFixit}, a provider of free, publicly-editable repair manuals.
+Like many other websites, {\textsf iFixit} uses {\textsf Memcached} for caching to decrease database load and improve response time.
 However, the caching strategy used is a very ad hoc one and therefore can be greatly improved.
-In this thesis we investigate caching strategies and find that generational caching fits iFixit's needs best.
-We then describe the process of implementing generational caching in iFixit's web site, report problems encountered, and provide before and after statistics.
+In this thesis we investigate caching strategies and find that generational caching fits {\textsf iFixit}'s needs best.
+We then describe the process of implementing generational caching in {\textsf iFixit}'s web site, report problems encountered, and provide before and after statistics.
 \end{abstract}
 
 
@@ -130,28 +130,27 @@ The database is the hardest resource to scale because of the inherent problems i
 The ubiquitous solution to scaling websites is some form of caching.
 Although most web servers employ generous amounts of caching, the methods and approaches used vary widely.
 Client side browser caching is popular because it avoids a large amount of network overhead.
-This is typically done by determining whether or not the content has changed since it was last requested.
+This is typically done by the web browser by determining whether or not the content has changed since it was last requested.
 Proxy caching is very similar to browser caching except that it happens at proxy servers located in between the client and the primary host server.
 This thesis, however, focuses on caching strategies and techniques in web application code that are aimed to reduce database load and decrease page response time.
 
-Although caching is used widely in industry, it is not a solved problem.
-Websites still struggle with determining what data to cache and how fine-grained to make the caches.
+Although application caching is used widely in industry, it is not a solved problem.
+Websites still struggle with determining what data to cache and how fine-grained to make the cache entries.
 Additionally, cache invalidation is the most important aspect of caching strategies and commonly is the driving force behind new solutions.
 This is primarily because websites are becoming less tolerant of serving stale data especially when their content is constantly changing.
 Current research is focused on maintaining a high cache hit rate while maintaining cache coherency.
 
-Modern websites are interested in caching as a way to handle increasing volumes of traffic.
+Modern websites are interested in caching as a way to reduce response times and handle increasing volumes of traffic.
 Traditional website scaling techniques aren't effective because of the vast amounts of user-generated content and dynamic nature of websites.
 Nearly all web pages need to be generated on demand from content out of the database.
 Because of this, server load becomes a real issue especially for the database machine.
 
-One such website facing server scaling problems is {\textsf iFixit}.
-{\textsf iFixit} is a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
-{\textsf iFixit}'s step-by-step guides and question and answer platform are driven heavily by user-generated content.
+One such website currently facing server scaling problems is {\textsf iFixit}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
+{\textsf iFixit}'s step-by-step guides and question and answer platform are driven largely by user-generated content.
 All repair guides on {\textsf iFixit} are publicly editable and contain rich revision history.
-This includes a patrolling system in which edits by unprivileged users are pending until a privileged user accepts them.
-The consequence of these features is that all of the content is stored in a database.
-{\textsf iFixit} currently employs an ad hoc caching strategy that relieves some server load and decreases response time, however, the effectiveness of the cache can be greatly improved.
+Consequently, all of the content is stored in a database that must be queried in order to respond to requests for data.
+To reduce server load and decrease response time, {\textsf iFixit} uses {\textsf Memcached} to cache the results of expensive operations.
+However, since the caching strategy used is an ad hoc one, the effectiveness of the cache can be greatly improved by using a different caching technique.
 
 % TODO: Diagrams?
 
@@ -175,40 +174,37 @@ The rest of this thesis is organized as follows...
 \section{iFixit}
 \subsection{Data and Site Usage}
 {\textsf iFixit}'s most popular content is their step-by-step repair guides.
-An {\textsf iFixit} guide consists of meta data about the guide such as title, summary, introduction, author, time required, and difficulty.
-Additionally, each guide has an ordered list of steps associated it.
+An {\textsf iFixit} guide consists of an ordered list of steps as well as meta data about the guide such as title, summary, parts, and tools.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
 To avoid duplicating content, guides can also be included in other guides as prerequisites.
 The prerequisite guides' steps are included before the actual guide's steps.
 
 All of {\textsf iFixit}'s content is dynamic.
 That is to say that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
-Additionally, anyone can edit the content due to it being a wiki.
+% TODO: Rewrite this (or not): Additionally, anyone can edit the content due to it being a wiki.
 
 {\textsf iFixit} certainly has a more read-heavy workload, however, writes are still fairly common.
-In particular, {\textsf iFixit} is known for its device ``teardowns.''
+Most notably, {\textsf iFixit} is known for its device ``teardowns.''
 These events consist of opening a brand new device as soon as it becomes available on the market.
 The opening process is documented and updated on {\textsf iFixit}'s website in realtime.
 These events attract thousands of visitors to the site in a short period of time.
 Because of this, the website must be able to handle a read-heavy workload while simultaneously writing to the same data.
 
-In addition to their main website, {\textsf iFixit} runs a Software as a Service (SaaS) platform for technical documentation platform to anyone who needs step-by-step instructions.
+In addition to their main website, {\textsf iFixit} runs a Software as a Service (SaaS) that provides technical documentation to anyone who needs step-by-step instructions.
 The general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
 
-The primary bottlneck is the database machine because it has to retrieve data for every incoming HTTP request.
+The primary bottleneck is the database machine because it has to retrieve data for every incoming HTTP request.
 On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
 
 \subsection{Web Architecture}
 In this section we describe {\textsf iFixit}'s production architecture, depicted in Figure ~\ref{fig:iFixitArchitecture}, at the time of this writing.
-
-{\textsf iFixit} runs two load balancers - one for {\textsf iFixit} and one for their SaaS.
-At any given time there are typically four to eight application machines that run {\textsf iFixit}'s core software which is written in PHP.
-There is one master database machine running the Percona build of MySQL which handles all reads and writes.
+All of {\textsf iFixit}'s traffic is first directed to a load balancer which selects an application machine to handle the request.
+At any given time there are four to eight application machines that run {\textsf iFixit}'s core software which is written in PHP.
+They get all of their data from one master database machine running the Percona build of MySQL which handles all reads and writes.
 There is also one slave database machine that is asynchronously replicated from the master database using MySQL's built in replication.
 However, this machine is used purely as a backup and is not used to improve performance.
 
-All of this is built using Amazon Web Services (AWS).
-AWS services used include Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront, a Content Delivery Network (CDN), for serving content out of S3, and Elastic Block Store (EBS) for raw block storage on each server instance.
+All of this is built using Amazon Web Services (AWS) including Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront, a Content Delivery Network (CDN), for serving content out of S3, and Elastic Block Store (EBS) for raw block storage on each server instance.
 
 \begin{figure}[h]
 \centering
@@ -221,7 +217,7 @@ AWS services used include Elastic Cloud Compute (EC2) for server instances, S3 f
 At a high level, a cache is used to store results of operations so future requests can be processed faster.
 A cache is typically not the primary storage location for data.
 In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
-A cache entry is a single piece of data stored in the cache that is uniquely identified.
+A cache entry is a single piece of data stored in the cache that can be uniquely identified.
 A cache hit occurs when the requested cache entry is in the cache and no further action is required.
 A cache miss occurs when the requested cache entry is not in the cache and it must be retrieved from its primary location.
 
@@ -243,7 +239,7 @@ Dynamic caches have a limited size and may eventually fill to capacity.
 When this occurs items must be removed to make room for new ones.
 The eviction policy determines which cache entries are removed.
 Some caches allow entries to be set with an expire time.
-After the specified time has passed the entry is expired and is no longer a valid cache entry and requests for it will miss.
+After the specified time has passed, the entry is expired and future requests for it will result in a cacheresult in a cache  miss.
 
 Cache coherence, also referred to as cache consistency, is the concept of keeping the data in the cache consistent with the data stored in the primary backing store.
 One such method is to perform cache invalidation upon data modification which removes any modified items from the cache so the data must be generated upon the next request.
@@ -312,8 +308,8 @@ Additionally, this is error-prone because software projects are constantly chang
 The next problem is that caching HTML is difficult because each cache entry must be invalidated when data changes.
 The more cache entries that depend on data the harder it is to ensure that they will all be invalidated at the appropriate time.
 This is especially true for fragments of HTML because the cache entries are typically defined in front-end templates but must be invalidated from backend code.
-In general, the difficulty of cache invalidation for any given data is proportional to the number of cache entries dependent on that data and how fine-grained those cache entries are.
-As a result, {\textsf iFixit} doesn't currently cache any HTMl fragments.
+In general, the difficulty of cache invalidation for any given datum is proportional to the number of cache entries dependent on that datum and how fine-grained those cache entries are.
+As a result, {\textsf iFixit} doesn't currently cache any HTML fragments.
 
 % TODO: Consider discussing varnish and page cache.
 
@@ -323,7 +319,7 @@ Most research is focused on addressing two core challenges with caching: cache c
 In some cases maintaining cache coherency is trivial because there is only one cache entry associated with the underlying data.
 However, with more complex data the situation is much more difficult.
 There may be dependencies between objects which means that multiple cache entries need to be invalidated at the same time.
-To further complicate things the dependencies between objects may be dynamic and must be resolved at run time on a per object basis.
+To further complicate things, the dependencies between objects may be dynamic and must be resolved at run time on a per object basis.
 This is very common for Web 2.0 sites that are driven by user-generated content.
 
 The second core caching challenge is ease-of-use.
@@ -336,7 +332,7 @@ This leaves the developer to write application-specific code instead of caching 
 \subsubsection{Caching Technologies}
 Most web application caching research revolves around caching strategies.
 It turns out that the underlying cache daemon is largely irrelevant.
-{\textsf Memcached} is by far the most popular web caching system; it is currently deployed by Facebook, Wikipedia, YouTube, and countless others \cite{memcachedDotOrg}.
+{\textsf Memcached} is by far the most popular web caching system; it is currently in use by Facebook, Wikipedia, YouTube, and countless others \cite{memcachedDotOrg}.
 
 {\textsf Memcached} is an example of a dynamic cache daemon.
 There are also static caches that are only updated periodically and are not modified directly by the web application.
@@ -357,7 +353,7 @@ A preferable alternative is to have caching built directly into the underlying a
 For example, Ruby on Rails, a popular web framework, provides a very rich data model that handles most of the caching details behind the scenes \cite{keyBasedCacheExpiration}.
 
 Gupta, Zeldovich, and Madden developed Cache Genie, an ORM for the Django web framework that automatically handles all necessary caching operations \cite{triggerBasedORM}.
-The project provides Python callbacks to database triggers that are called when queries are run on the database.
+The project registers Python callbacks for database triggers that are called when queries are run on the database.
 This allows the tool to update and/or invalidate cache entries depending on the queries.
 The major advantage of this approach is that no matter how the data is changed the cache remains consistent because cache invalidation occurs at the data layer.
 Other projects have used database triggers with similar results \cite{scalableConsistentCaching}.
@@ -398,14 +394,12 @@ This allows frequently changing data to have a shorter time to live and infreque
 
 \subsection{Determining what to cache}
 Some research has been done trying to determine what data is the most useful to cache.
-Many sources propose that fragments of HTML are the most useful \cite{comparisonOfCachingSolutions, scalableConsistentCaching}.
-A cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store \cite{howBasecampGotSoFast}.
+Many sources propose that fragments of HTML are the most useful because a cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store \cite{comparisonOfCachingSolutions, scalableConsistentCaching, howBasecampGotSoFast}.
 
 Baeza-Yates et al. suggested that enforcing cache admission policies is a valuable way to improve hit ratio \cite{cacheAdmissionPolicies}.
 The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
 Detecting such queries and leaving them out of the cache leaves more room for caching results of frequently accessed queries thus increasing cache hit ratio.
-However, Cambazoglu, Junqueira, and Plachouras claim that the eviction policy doesn't have a significant impact on cache hit ratio \cite{refreshingPerspectiveSearch}.
-This is because caches can easily be expanded to hold more entries and therefore items rarely get evicted to begin with \cite{refreshingPerspectiveSearch}.
+However, Cambazoglu, Junqueira, and Plachouras claim that the eviction policy doesn't have a significant impact on cache hit ratio because caches can easily be expanded to hold more entries and therefore evictions are rare \cite{refreshingPerspectiveSearch}.
 
 
 \section{Memcached}
@@ -423,8 +417,7 @@ The expire time the data was set with determines the maximum lifespan of the cac
 Once the data has expired it is no longer returned for {\tt get} requests although the data is not immediately removed from memory.
 Before data has expired, however, items can be evicted due to memory pressure.
 This occurs when new items are being added to the cache and there isn't any room.
-Expired items are evicted first if any are found.
-If not, the Least Recently Used (LRU) policy is used to select a cache entry to evict.
+Expired items are evicted first if any are found otherwise the Least Recently Used (LRU) policy is used to select a cache entry to evict.
 In other words, the cache entry that has last been referenced the longest ago is evicted.
 Finally, cache entries can also be removed by performing {\tt delete} requests and providing the key that identifies the data to be deleted.
 
@@ -450,7 +443,7 @@ In this chapter, we explain in depth the caching solution we analyze in Chapter 
 But first, we must reiterate the requirements for such a caching solution.
 
 The caching solution must be largely transparent to the developer.
-The developer should only be required to determine what data to cache, not how to cache it and invalidate it.
+The developer should only be required to determine what data to cache, not how to cache it and how to invalidate it.
 It should also allow for finer-grained caching without added complexity.
 This will result in a performance improvement because more data will be cached and each cache entry can be invalidated separately.
 Otherwise, larger cache entries are invalidated as a whole even when a small amount of the data has changed.
