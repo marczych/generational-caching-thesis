@@ -256,10 +256,12 @@ function createUser($userid, $name, $email) {
    $user->name = $name;
    $user->email = $email;
    $user->insert();
+   return $user;
 }
 
 function getUser($userid) {
    $user = User::find($userid);
+   return $user;
 }
 ?>
 \end{minted}
@@ -488,7 +490,7 @@ These typically are used in addition to the ORM to gather more complex data.
 \begin{subfigure}[b]{1.0\textwidth}
    \begin{ssp}
    \begin{minted}{sql}
-   SELECT COUNT(*)
+   SELECT *
    FROM users
    WHERE email LIKE "%@gmail.com"
    \end{minted}
