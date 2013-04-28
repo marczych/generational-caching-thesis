@@ -1,6 +1,5 @@
-
 % Cal Poly Thesis
-% 
+%
 % based on UC Thesis format
 %
 % modified by Mark Barry 2/07.
@@ -12,7 +11,6 @@
 \usepackage{url}
 
 \usepackage[pdftex]{graphicx}
-% Update title and author below...
 \usepackage[pdftex,plainpages=false,breaklinks=true,colorlinks=true,urlcolor=blue,citecolor=blue,%
                                    linkcolor=blue,bookmarks=true,bookmarksopen=true,%
                                    bookmarksopenlevel=3,pdfstartview=FitV,
@@ -27,6 +25,8 @@
 \usepackage{amsmath}
 \usepackage[letterpaper]{geometry}
 \usepackage[overload]{textcase}
+\usepackage{caption}
+\usepackage{subcaption}
 \usepackage{minted}
 
 \bibliographystyle{abbrv}
@@ -315,7 +315,7 @@ This is very common for Web 2.0 sites that are driven by user-generated content.
 
 The second core caching challenge is ease-of-use.
 The problem is that manually controlling the cache is tedious and error-prone.
-Leaving it up to the application developer to correctly {\tt get}, {\tt set}, and {\tt delete} cache entries results in an ad-hoc caching strategy.
+Leaving it up to the application developer to correctly {\tt get}, {\tt set}, and {\tt delete} cache entries results in an ad hoc caching strategy.
 Most research regarding ease-of-use focuses on developing a system that transparently handles all caching operations.
 This leaves the developer to write application-specific code instead of caching boilerplate.
 
@@ -450,13 +450,59 @@ In section 3.2 we go over the details of implementing the design in iFixit's cod
 \section{Design}
 \subsection{What is being cached}
 This section describes the three primary types of data that are cached.
-The first data type are objects constructed from query results that represent a tuple in the database.
+The first data type are objects constructed from query results that represent a tuple in the database (see Figure ~\ref{fig:ormObject}).
 These are used as an ORM and can be used to make modifications to the database as well as just retrieve data for consumption.
-The second data type are fragments of HTML.
-These are typically generated from data retrieved from the database and need to be invalidated anytime the underlying data has changed.
-Finally, results of ad hoc queries are also cached.
+The second data type are fragments of HTML generated in templates like the one depicted in Figure ~\ref{fig:htmlTemplate}.
+These typically produce output based on data retrieved from the database and need to be invalidated anytime that data has changed.
+Finally, results of ad hoc queries, like the one in Figure ~\ref{fig:adHocQuery}, are also cached.
 These typically are used in addition to the ORM to gather more complex data.
-%TODO: Picture?
+
+\begin{figure}[h]
+\begin{subfigure}[b]{1.0\textwidth}
+   \begin{ssp}
+   \begin{minted}{php}
+   <?php
+   class User extends ORMObject {
+      private $userid;
+      private $name;
+      private $email;
+   }
+   ?>
+   \end{minted}
+   \end{ssp}
+   \caption{ORM Object}
+   \label{fig:ormObject}
+\end{subfigure}
+
+\begin{subfigure}[b]{1.0\textwidth}
+   \begin{ssp}
+   \begin{minted}{php}
+   <div class="user">
+      <h3><?= $user->name ?></h3>
+      <p>Userid: <?= $user->userid ?></p>
+      <p>Email: <?= $user->email ?></p>
+   </div>
+   \end{minted}
+   \end{ssp}
+   \caption{HTML template}
+   \label{fig:htmlTemplate}
+\end{subfigure}
+
+\begin{subfigure}[b]{1.0\textwidth}
+   \begin{ssp}
+   \begin{minted}{sql}
+   SELECT COUNT(*)
+   FROM users
+   WHERE email LIKE "%@gmail.com"
+   \end{minted}
+   \end{ssp}
+   \caption{Ad hoc query}
+   \label{fig:adHocQuery}
+\end{subfigure}
+
+\caption{Data being cached}
+\label{fig:dataBeingCached}
+\end{figure}
 
 \subsection{ORM Caching}
 The primary key uniquely identifies a tuple in the database and can be used with the ORM to select a single record.
