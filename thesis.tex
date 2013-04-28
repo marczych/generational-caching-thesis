@@ -146,7 +146,7 @@ One such website facing server scaling problems is {\textsf iFixit}.
 All repair guides on iFixit are publicly editable and contain rich revision history.
 This includes a patrolling system in which edits by unprivileged users are pending until a privileged user accepts them.
 The consequence of these features is that all of the content is stored in a database.
-{\textsf iFixit} currently employs an ad hoc caching strategy that relieves some server load, however, the effectiveness of the cache can be greatly improved.
+{\textsf iFixit} currently employs an ad hoc caching strategy that relieves some server load and decreases response time, however, the effectiveness of the cache can be greatly improved.
 
 % TODO: Diagrams?
 
@@ -300,8 +300,6 @@ This is especially true for fragments of HTML because the cache entries are typi
 In general, the difficulty of cache invalidation for any given data is proportional to the number of cache entries dependent on that data and how fine-grained those cache entries are.
 As a result, iFixit doesn't currently cache any HTMl fragments.
 
-% TODO: Discuss weaknesses. Justify needs for your work! (Mainly done but might want to specify why caching is still needed.)
-
 % TODO: Consider discussing varnish and page cache.
 
 \section{Related Work}
@@ -387,7 +385,6 @@ This allows frequently changing data to have a shorter time to live and infreque
 Some research has been done trying to determine what data is the most useful to cache.
 Many sources propose that fragments of HTML are the most useful \cite{comparisonOfCachingSolutions, scalableConsistentCaching}.
 A cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store \cite{howBasecampGotSoFast}.
-% TODO: Expand on this since it's an important part of my system. Mention pitfalls here or elsewhere?
 
 Baeza-Yates et al. suggested that enforcing cache admission policies is a valuable way to improve hit ratio \cite{cacheAdmissionPolicies}.
 The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
@@ -599,7 +596,7 @@ Other similar papers should be consulted to get a good experimental setup that i
 
 \section{General Approach}
 Validating my work is a fairly straightforward process.
-The basic approach will involve gathering various statistics with and without my approach during an experiment based on a repeatable set of input data. %TODO: This sentence kinda sucks.
+The basic approach will involve gathering various statistics with and without my approach during an experiment based on a repeatable set of input data.
 
 \section{Measured Values}
 Some values that should be increased include cache hit rate and requests per second.
