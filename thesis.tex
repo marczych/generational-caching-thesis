@@ -242,8 +242,8 @@ This becomes an object-relational mapping (ORM) in that the properties of the cl
 Rows can be inserted, updated, and removed by calling the {\tt insert}, {\tt update}, {\tt delete} methods on the object, respectively.
 This is demonstrated in Figure ~\ref{fig:activeRecordExample}.
 
-% TODO: Make code single spaced.
 \begin{figure}[h]
+\begin{ssp}
 \begin{minted}{php}
 <?php
 function createUser($userid, $name, $email) {
@@ -259,6 +259,7 @@ function getUser($userid) {
 }
 ?>
 \end{minted}
+\end{ssp}
 \caption{Basic ActiveRecord example.}
 \label{fig:activeRecordExample}
 \end{figure}
@@ -516,13 +517,14 @@ A call to {\tt cacheEnd} signals the end of the cached HTML section.
 This function closes output buffering, gets the contents of the buffer, caches it, and finally outputs the HTML to {\tt stdout}.
 A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 
-% TODO: Make code single spaced.
 \begin{figure}[h]
+\begin{ssp}
 \begin{minted}{php}
 <? if (!cacheStart($ormObject, 'view-all', CACHE_FOREVER)): ?>
    <? /* HTML generation */ ?>
 <? cacheEnd(); endif; ?>
 \end{minted}
+\end{ssp}
 \caption{Example usage of cacheStart and cacheEnd.}
 \label{fig:cacheStartExample}
 \end{figure}
