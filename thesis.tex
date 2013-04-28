@@ -81,9 +81,14 @@
 \committeemembershippage
 
 \begin{abstract}
-
-Caching is hard. I'm going to make it better.
-
+Web site scaling has been an issue since the inception of the web.
+The demand for user generated content and personalized web pages leads to storing all information in a database on the web server.
+Unfortunately, scaling the database to handle large amounts of traffic is still a problem many companies face.
+One such company is iFixit, a provider of free, publicly-editable repair manuals.
+Like many other websites, iFixit uses Memcached for caching to decrease database load and improve response time.
+However, the caching strategy used is a very ad hoc one and therefore can be greatly improved.
+In this thesis we investigate caching strategies and find that generational caching fits iFixit's needs best.
+We then describe the process of implementing generational caching in iFixit's web site, report problems encountered, and provide before and after statistics.
 \end{abstract}
 
 
