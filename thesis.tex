@@ -159,8 +159,6 @@ The rest of this thesis is organized as follows...
 \chapter{Background}
 \label{background}
 
-% TODO: Diagrams.
-
 \section{iFixit}
 \subsection{Data and Site Usage}
 iFixit's most popular content is their step-by-step repair guides.
@@ -188,8 +186,7 @@ The primary bottlneck is the database machine because it has to retrieve data fo
 On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
 
 \subsection{Web Architecture}
-% TODO: Diagrams.
-In this section we describe iFixit's production architecture at the time of this writing.
+In this section we describe iFixit's production architecture, depicted in Figure ~\ref{fig:iFixitArchitecture}, at the time of this writing.
 
 iFixit runs two load balancers - one for iFixit and one for their SaaS.
 At any given time there are typically four to eight application machines that run iFixit's core software which is written in PHP.
@@ -199,6 +196,13 @@ However, this machine is used purely as a backup and is not used to improve perf
 
 All of this is built using Amazon Web Services (AWS).
 AWS services used include Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront, a Content Delivery Network (CDN), for serving content out of S3, and Elastic Block Store (EBS) for raw block storage on each server instance.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{assets/iFixitArchitecture.png}
+\caption{iFixit's Production Architecture}
+\label{fig:iFixitArchitecture}
+\end{figure}
 
 \section{Terminology}
 At a high level, a cache is used to store results of operations so future requests can be processed faster.
