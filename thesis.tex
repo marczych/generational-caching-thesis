@@ -84,11 +84,11 @@
 Web site scaling has been an issue since the inception of the web.
 The demand for user generated content and personalized web pages leads to storing all information in a database on the web server.
 Unfortunately, scaling the database to handle large amounts of traffic is still a problem many companies face.
-One such company is {\textsf iFixit}, a provider of free, publicly-editable repair manuals.
-Like many other websites, {\textsf iFixit} uses {\textsf Memcached} for caching to decrease database load and improve response time.
+One such company is \textsf{iFixit}, a provider of free, publicly-editable repair manuals.
+Like many other websites, \textsf{iFixit} uses \textsf{Memcached} for caching to decrease database load and improve response time.
 However, the caching strategy used is a very ad hoc one and therefore can be greatly improved.
-In this thesis we investigate caching strategies and find that generational caching fits {\textsf iFixit}'s needs best.
-We then describe the process of implementing generational caching in {\textsf iFixit}'s web site, report problems encountered, and provide before and after statistics.
+In this thesis we investigate caching strategies and find that generational caching fits \textsf{iFixit}'s needs best.
+We then describe the process of implementing generational caching in \textsf{iFixit}'s web site, report problems encountered, and provide before and after statistics.
 \end{abstract}
 
 
@@ -145,11 +145,11 @@ Traditional website scaling techniques aren't effective because of the vast amou
 Nearly all web pages need to be generated on demand from content out of the database.
 Because of this, server load becomes a real issue especially for the database machine.
 
-One such website currently facing server scaling problems is {\textsf iFixit}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
-{\textsf iFixit}'s step-by-step guides and question and answer platform are driven largely by user-generated content.
-All repair guides on {\textsf iFixit} are publicly editable and contain rich revision history.
+One such website currently facing server scaling problems is \textsf{iFixit}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
+\textsf{iFixit}'s step-by-step guides and question and answer platform are driven largely by user-generated content.
+All repair guides on \textsf{iFixit} are publicly editable and contain rich revision history.
 Consequently, all of the content is stored in a database that must be queried in order to respond to requests for data.
-To reduce server load and decrease response time, {\textsf iFixit} uses {\textsf Memcached} to cache the results of expensive operations.
+To reduce server load and decrease response time, \textsf{iFixit} uses \textsf{Memcached} to cache the results of expensive operations.
 However, since the caching strategy used is an ad hoc one, the effectiveness of the cache can be greatly improved by using a different caching technique.
 
 % TODO: Diagrams?
@@ -173,33 +173,33 @@ The rest of this thesis is organized as follows...
 
 \section{iFixit}
 \subsection{Data and Site Usage}
-{\textsf iFixit}'s most popular content is their step-by-step repair guides.
-An {\textsf iFixit} guide consists of an ordered list of steps as well as meta data about the guide such as title, summary, parts, and tools.
+\textsf{iFixit}'s most popular content is their step-by-step repair guides.
+An \textsf{iFixit} guide consists of an ordered list of steps as well as meta data about the guide such as title, summary, parts, and tools.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
 To avoid duplicating content, guides can also be included in other guides as prerequisites.
 The prerequisite guides' steps are included before the actual guide's steps.
 
-All of {\textsf iFixit}'s content is dynamic.
+All of \textsf{iFixit}'s content is dynamic.
 That is to say that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
 % TODO: Rewrite this (or not): Additionally, anyone can edit the content due to it being a wiki.
 
-{\textsf iFixit} certainly has a more read-heavy workload, however, writes are still fairly common.
-Most notably, {\textsf iFixit} is known for its device ``teardowns.''
+\textsf{iFixit} certainly has a more read-heavy workload, however, writes are still fairly common.
+Most notably, \textsf{iFixit} is known for its device ``teardowns.''
 These events consist of opening a brand new device as soon as it becomes available on the market.
-The opening process is documented and updated on {\textsf iFixit}'s website in realtime.
+The opening process is documented and updated on \textsf{iFixit}'s website in realtime.
 These events attract thousands of visitors to the site in a short period of time.
 Because of this, the website must be able to handle a read-heavy workload while simultaneously writing to the same data.
 
-In addition to their main website, {\textsf iFixit} runs a Software as a Service (SaaS) that provides technical documentation to anyone who needs step-by-step instructions.
+In addition to their main website, \textsf{iFixit} runs a Software as a Service (SaaS) that provides technical documentation to anyone who needs step-by-step instructions.
 The general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
 
 The primary bottleneck is the database machine because it has to retrieve data for every incoming HTTP request.
 On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
 
 \subsection{Web Architecture}
-In this section we describe {\textsf iFixit}'s production architecture, depicted in Figure ~\ref{fig:iFixitArchitecture}, at the time of this writing.
-All of {\textsf iFixit}'s traffic is first directed to a load balancer which selects an application machine to handle the request.
-At any given time there are four to eight application machines that run {\textsf iFixit}'s core software which is written in PHP.
+In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure ~\ref{fig:iFixitArchitecture}, at the time of this writing.
+All of \textsf{iFixit}'s traffic is first directed to a load balancer which selects an application machine to handle the request.
+At any given time there are four to eight application machines that run \textsf{iFixit}'s core software which is written in PHP.
 They get all of their data from one master database machine running the Percona build of MySQL which handles all reads and writes.
 There is also one slave database machine that is asynchronously replicated from the master database using MySQL's built in replication.
 However, this machine is used purely as a backup and is not used to improve performance.
@@ -285,18 +285,18 @@ This {\tt User} can later be retrieved by calling {\tt find}.
 
 
 \section{iFixit's Current Caching Strategy}
-{\textsf iFixit} currently has a very ad hoc approach to caching.
+\textsf{iFixit} currently has a very ad hoc approach to caching.
 Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
 If the object is not in the cache then it is retrieved and stored in the cache for later use.
 The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
-{\textsf iFixit} uses two strategies for cache invalidation that are described below.
+\textsf{iFixit} uses two strategies for cache invalidation that are described below.
 
 The first strategy relies on the cache entry's expiration time to update it with fresh data.
 After the specified amount of time, the cache is no longer valid so the application is forced to regenerate it and set it in the cache for later use.
 The cache is never invalidated by the application when the underlying content changes.
 This strategy is particularly useful for data that isn't required to be correct such as related content, approximate totals, etc.
 
-The second strategy used by {\textsf iFixit} involves deleting cache entries whenever relevant data is changed.
+The second strategy used by \textsf{iFixit} involves deleting cache entries whenever relevant data is changed.
 It is up to the developer to find the appropriate places to delete cache entries when certain events occur.
 The advantages to this approach are that it's simple to understand, straightforward to implement, and ensures that fresh data is served if done correctly.
 
@@ -309,7 +309,7 @@ The next problem is that caching HTML is difficult because each cache entry must
 The more cache entries that depend on data the harder it is to ensure that they will all be invalidated at the appropriate time.
 This is especially true for fragments of HTML because the cache entries are typically defined in front-end templates but must be invalidated from backend code.
 In general, the difficulty of cache invalidation for any given datum is proportional to the number of cache entries dependent on that datum and how fine-grained those cache entries are.
-As a result, {\textsf iFixit} doesn't currently cache any HTML fragments.
+As a result, \textsf{iFixit} doesn't currently cache any HTML fragments.
 
 % TODO: Consider discussing varnish and page cache.
 
@@ -332,17 +332,17 @@ This leaves the developer to write application-specific code instead of caching 
 \subsubsection{Caching Technologies}
 Most web application caching research revolves around caching strategies.
 It turns out that the underlying cache daemon is largely irrelevant.
-{\textsf Memcached} is by far the most popular web caching system; it is currently in use by Facebook, Wikipedia, YouTube, and countless others \cite{memcachedDotOrg}.
+\textsf{Memcached} is by far the most popular web caching system; it is currently in use by Facebook, Wikipedia, YouTube, and countless others \cite{memcachedDotOrg}.
 
-{\textsf Memcached} is an example of a dynamic cache daemon.
+\textsf{Memcached} is an example of a dynamic cache daemon.
 There are also static caches that are only updated periodically and are not modified directly by the web application.
 Static caches are popular for search engines because a large number of search queries return the same data for long periods of time.
 These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache \cite{designTradeOffsSearchEngine}.
 In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined \cite{designTradeOffsSearchEngine}.
 Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches \cite{cacheAdmissionPolicies, designTradeOffsSearchEngine}.
 
-The exception to this trend is Voras and Zagar's {\textsf Memcached} alternative named SQLCached \cite{sqlCached}.
-This tool offers a few things that {\textsf Memcached} doesn't: complex data types and rich querying for retrieval and invalidation.
+The exception to this trend is Voras and Zagar's \textsf{Memcached} alternative named SQLCached \cite{sqlCached}.
+This tool offers a few things that \textsf{Memcached} doesn't: complex data types and rich querying for retrieval and invalidation.
 This is possible because SQLCached uses SQLite as its caching mechanism.
 
 \subsubsection{Implementing in an Application}
@@ -404,15 +404,15 @@ However, Cambazoglu, Junqueira, and Plachouras claim that the eviction policy do
 
 \section{Memcached}
 In the words of its creators, \begin{quotation}``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering.\cite{memcachedDotOrg}''\end{quotation}
-There are two main operations in {\textsf Memcached}: {\tt get} and {\tt set}.
+There are two main operations in \textsf{Memcached}: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
 If the data is in the cache it is returned to the caller, otherwise the result is empty which indicates that the application must retrieve the data elsewhere.
-Data is added to {\textsf Memcached} by calling {\tt set} with a cache key, expiration time, and the data being stored in the cache.
+Data is added to \textsf{Memcached} by calling {\tt set} with a cache key, expiration time, and the data being stored in the cache.
 Another specialty command is {\tt getMulti} which is used to retrieve multiple keys in one operation.
 This is used to improve client performance by reducing the network overhead associated with retrieving many keys in succession.
-All {\textsf Memcached} operations are constant time ({\tt O(1)}) with respect to the number of elements stored in it.
+All \textsf{Memcached} operations are constant time ({\tt O(1)}) with respect to the number of elements stored in it.
 
-There are three ways for cached data to be removed from {\textsf Memcached}.
+There are three ways for cached data to be removed from \textsf{Memcached}.
 The expire time the data was set with determines the maximum lifespan of the cache for which it is valid.
 Once the data has expired it is no longer returned for {\tt get} requests although the data is not immediately removed from memory.
 Before data has expired, however, items can be evicted due to memory pressure.
@@ -421,18 +421,18 @@ Expired items are evicted first if any are found otherwise the Least Recently Us
 In other words, the cache entry that has last been referenced the longest ago is evicted.
 Finally, cache entries can also be removed by performing {\tt delete} requests and providing the key that identifies the data to be deleted.
 
-To reduce the effects of memory fragmentation, {\textsf Memcached} employs a technique called slab allocation.
-The total memory available to {\textsf Memcached} is partitioned into 1MB pages.
+To reduce the effects of memory fragmentation, \textsf{Memcached} employs a technique called slab allocation.
+The total memory available to \textsf{Memcached} is partitioned into 1MB pages.
 Pages are assigned to slab-classes on an as-needed basis.
 Slab-classes determine the maximum size of data to be stored in the slab and consequently the size of chunks in pages assigned to the slab-class.
-When storing data in {\textsf Memcached}, the slab-class with the smallest chunk size that the data can fit in is used.
+When storing data in \textsf{Memcached}, the slab-class with the smallest chunk size that the data can fit in is used.
 Any remaining space in the chunk cannot be used to store any other data and therefore ends up being wasted space.
 However, the amount of space wasted in slab allocation is less than a naive implementation which results in memory fragmentation.
 All replacement algorithms operate on a per-slab-class basis.
 
-{\textsf Memcached} is distributed in nature.
-Adding more servers to a web application involves adding the new {\textsf Memcached} instance's IP address and port to the list of servers that the {\textsf Memcached} client library uses.
-Keys map to exactly one server so the total memory available in the {\textsf Memcached} cluster is the sum of memory available on each instance
+\textsf{Memcached} is distributed in nature.
+Adding more servers to a web application involves adding the new \textsf{Memcached} instance's IP address and port to the list of servers that the \textsf{Memcached} client library uses.
+Keys map to exactly one server so the total memory available in the \textsf{Memcached} cluster is the sum of memory available on each instance
 The client library performs consistent hashing on any key lookups to determine which server in the cluster to send the request to.
 The result is that adding and removing servers doesn't drastically impact hit rate because the majority of keys map to the same servers before and after the change.
 
@@ -449,8 +449,8 @@ This will result in a performance improvement because more data will be cached a
 Otherwise, larger cache entries are invalidated as a whole even when a small amount of the data has changed.
 Finer-grained caching is particularly useful for caching fragments of HTML.
 
-In section 3.1 we explain the high-level design of the generational caching strategy implemented for {\textsf iFixit}.
-In section 3.2 we go over the details of implementing the design in {\textsf iFixit}'s code base.
+In section 3.1 we explain the high-level design of the generational caching strategy implemented for \textsf{iFixit}.
+In section 3.2 we go over the details of implementing the design in \textsf{iFixit}'s code base.
 
 \section{Design}
 \subsection{What is being cached}
@@ -536,13 +536,13 @@ The amount of extra data loaded in addition to the primary table to make the ove
 
 \section{Implementation}
 \subsection{Existing Infrastructure}
-Before we can go into the details of the implementation of generational caching, some background on {\textsf iFixit}'s existing code must be presented.
+Before we can go into the details of the implementation of generational caching, some background on \textsf{iFixit}'s existing code must be presented.
 Most data is retrieved using a custom ORM that was built in-house.
 The primary operation for retrieving data through the ORM is {\tt findAllByKey} which returns objects based on their primary keys in the database.
 A list of primary keys is provided to {\tt findAllByKey} and the ORM selects those tuples from the database and returns the objects constructed from them.
 
 \subsection{Cache-Aware ORM}
-Most of the work performed while implementing the caching strategy involved augmenting {\textsf iFixit}'s ORM to cache objects when they are retrieved with {\tt findAllByKey}.
+Most of the work performed while implementing the caching strategy involved augmenting \textsf{iFixit}'s ORM to cache objects when they are retrieved with {\tt findAllByKey}.
 In order to add caching to {\tt findAllByKey} we add a wrapper method called {\tt findAllCached}.
 At a very high-level, this method constructs cache keys for the given primary keys and performs a cache {\tt getMulti} on them.
 Any objects that were not cached are retrieved from the database using {\tt findAllByKey} and are then stored in the cache.
@@ -556,7 +556,7 @@ For this call, a flag is passed to {\tt findAllCached} that indicates that only 
 Otherwise, all other meta data would be loaded which is exactly what the first {\tt findAllCached} does.
 The recursive call constructs a cache key using only the primary key to avoid infinite recursion.
 
-The {\textsf Memcached} operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential {\textsf Memcached} {\tt get}s.
+The \textsf{Memcached} operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential \textsf{Memcached} {\tt get}s.
 All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
 The uncached objects are then cached for later use.
 
@@ -587,8 +587,8 @@ A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 
 The second caching function we wrote is {\tt batchCache} which is designed for caching lots of fragments of HTML.
 The most common use case for it is rendering a list of objects one after the other e.g. search results.
-{\tt batchCache} is better than {\tt cacheStart} and {\tt cacheEnd} for this circumstance because of the network overhead for sequential {\textsf Memcached} calls.
-This is especially true for fragments of HTML whose generation time is close to or less than the average time of a {\textsf Memcached} {\tt get}.
+{\tt batchCache} is better than {\tt cacheStart} and {\tt cacheEnd} for this circumstance because of the network overhead for sequential \textsf{Memcached} calls.
+This is especially true for fragments of HTML whose generation time is close to or less than the average time of a \textsf{Memcached} {\tt get}.
 
 {\tt batchCache} accepts a mapping of string cache key to any type of data.
 The cache keys are used in conjunction with an additional string similar to {\tt cacheStart} to check the cache for HTML.
@@ -639,8 +639,8 @@ Targetted traffic on the other hand has increased traffic to a small subset of c
 This simulates special events such as press and social media where a page goes viral for a short amount of time.
 Both types of traffic are realistic and are useful measures for the effectiveness of caching strategies.
 
-The contents of the database and {\textsf Memcached} must be the same at the start of the experiments.
-The contents of {\textsf Memcached} can be flushed to ensure a consistent repeatable experiment.
+The contents of the database and \textsf{Memcached} must be the same at the start of the experiments.
+The contents of \textsf{Memcached} can be flushed to ensure a consistent repeatable experiment.
 However, this setup isn't very realistic because the contents of cache is never completely empty in production and may skew results depending on differences in the caching algorithms.
 To mitigate this issue, experiments can be run for a period of time before statistics are collected to make the contents of cache more realistic.
 
