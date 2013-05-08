@@ -262,7 +262,6 @@ There are then a series of cache misses followed by a series of duplicated reque
 These should be avoided if possible because of the redundant work done by each request.
 If not handled properly, this event alone can crash web sites.
 
-% TODO: This might not really belong here.
 The ActiveRecord pattern is a common technique used in web applications to interact with the data stored in a database.
 In the host language, the developer creates classes that represent tables in the database.
 This becomes an object-relational mapping (ORM) in that the properties of the class represent columns in the database.
@@ -454,17 +453,20 @@ The result is that adding and removing servers doesn't drastically impact hit ra
 \chapter{Design and Implementation}
 \label{designAndImplementation}
 In this chapter, we explain in depth the caching solution we analyze in Chapter X.
-But first, we must reiterate the requirements for such a caching solution.
+But first, we must reiterate \textsf{iFixit}'s requirements for such a caching solution.
 
-% TODO: Bulletize this list with R1, R2 etc.
-The caching solution must be largely transparent to the developer.
-The developer should only be required to determine what data to cache, not how to cache it and how to invalidate it.
-It should also allow for finer-grained caching without added complexity.
-This will result in a performance improvement because more data will be cached and each cache entry can be invalidated separately.
-Otherwise, larger cache entries are invalidated as a whole even when a small amount of the data has changed.
-Finer-grained caching is particularly useful for caching fragments of HTML.
+\begin{description}
+   \item[R1] It must be largely transparent to the developer.
+             The developer should only be required to determine what data to cache, not how to cache it and how to invalidate it.
+   \item[R2] It must allow for finer-grained caching without added complexity.
+   \item[R3] It must provide a means of caching and invalidating fragments of HTML.
+   \item[R4] It must result in increased performance in regards to response time and database load.
+\end{description}
 
-In section 3.1 we explain the high-level design of the generational caching strategy implemented for \textsf{iFixit}.
+% TODO: State that we are basing our solution on generational caching (here or elsewhere).
+
+The rest of this chapter is organized as follows.
+In section 3.1 we explain the high-level design of the caching strategy implemented for \textsf{iFixit}.
 In section 3.2 we go over the details of implementing the design in \textsf{iFixit}'s code base.
 
 \section{Design}
