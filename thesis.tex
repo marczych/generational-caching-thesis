@@ -145,8 +145,8 @@ Traditional website scaling techniques aren't effective because of the vast amou
 Nearly all web pages need to be generated on demand from content out of the database.
 Because of this, server load becomes a real issue especially for the database machine.
 
-One such website currently facing server scaling problems is \textsf{iFixit}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
-\textsf{iFixit}'s step-by-step guides and question and answer platform are driven largely by user-generated content.
+One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
+\textsf{iFixit}'s step-by-step guides and question-and-answer platform are driven largely by user-generated content.
 All repair guides on \textsf{iFixit} are publicly editable and contain rich revision history.
 Consequently, all of the content is stored in a database that must be queried in order to respond to requests for data.
 To reduce server load and decrease response time, \textsf{iFixit} uses \textsf{Memcached} to cache the results of expensive operations.
@@ -183,6 +183,7 @@ All of \textsf{iFixit}'s content is dynamic.
 That is to say that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
 % TODO: Rewrite this (or not): Additionally, anyone can edit the content due to it being a wiki.
 
+% TODO: Screenshots of home page and a guide page. Don't worry about taking up lots of space.
 \textsf{iFixit} certainly has a more read-heavy workload, however, writes are still fairly common.
 Most notably, \textsf{iFixit} is known for its device ``teardowns.''
 These events consist of opening a brand new device as soon as it becomes available on the market.
@@ -190,7 +191,7 @@ The opening process is documented and updated on \textsf{iFixit}'s website in re
 These events attract thousands of visitors to the site in a short period of time.
 Because of this, the website must be able to handle a read-heavy workload while simultaneously writing to the same data.
 
-In addition to their main website, \textsf{iFixit} runs a Software as a Service (SaaS) that provides technical documentation to anyone who needs step-by-step instructions.
+In addition to their main website, \textsf{iFixit} runs a Software as a Service (SaaS) business that provides technical documentation to anyone who needs step-by-step instructions.
 The general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
 
 The primary bottleneck is the database machine because it has to retrieve data for every incoming HTTP request.
@@ -287,36 +288,36 @@ This {\tt User} can later be retrieved by calling {\tt find}.
 \section{iFixit's Current Caching Strategy}
 \textsf{iFixit} currently has a very ad hoc approach to caching.
 Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
-If the object is not in the cache then it is retrieved and stored in the cache for later use.
+If the object is not in the cache then, it is retrieved and stored in the cache for later use.
 The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
 \textsf{iFixit} uses two strategies for cache invalidation that are described below.
 
 The first strategy relies on the cache entry's expiration time to update it with fresh data.
 After the specified amount of time, the cache is no longer valid so the application is forced to regenerate it and set it in the cache for later use.
 The cache is never invalidated by the application when the underlying content changes.
-This strategy is particularly useful for data that isn't required to be correct such as related content, approximate totals, etc.
+This strategy is particularly useful for data that isn't required to be absolutely current such as related content, approximate totals, etc.
 
 The second strategy used by \textsf{iFixit} involves deleting cache entries whenever relevant data is changed.
 It is up to the developer to find the appropriate places to delete cache entries when certain events occur.
 The advantages to this approach are that it's simple to understand, straightforward to implement, and ensures that fresh data is served if done correctly.
 
 There are two major problems with these techniques.
-The first of which is that the burden of cache invalidation is on the developer.
+The first is that the burden of cache invalidation is on the developer.
 This is because the developer must decide what data to cache and spend time finding all the places where the cache entries should be invalidated.
 Additionally, this is error-prone because software projects are constantly changing and the fragile caching setup could break.
 
 The next problem is that caching HTML is difficult because each cache entry must be invalidated when data changes.
-The more cache entries that depend on data the harder it is to ensure that they will all be invalidated at the appropriate time.
-This is especially true for fragments of HTML because the cache entries are typically defined in front-end templates but must be invalidated from backend code.
+The more cache entries that depend on data, the harder it is to ensure that they will all be invalidated at the appropriate time.
+This is especially true for fragments of HTML because the cache entries are typically defined in front-end templates but must be invalidated from back-end code.
 In general, the difficulty of cache invalidation for any given datum is proportional to the number of cache entries dependent on that datum and how fine-grained those cache entries are.
 As a result, \textsf{iFixit} doesn't currently cache any HTML fragments.
 
-% TODO: Consider discussing varnish and page cache.
+My caching strategy aims to solve these two problems by providing a means for caching HTML and making cache invalidation happen automatically when the underlying data has changed.
 
 \section{Related Work}
 \subsection{Research Challenges}
-Most research is focused on addressing two core challenges with caching: cache coherency and ease-of-use.
-In some cases maintaining cache coherency is trivial because there is only one cache entry associated with the underlying data.
+Most research is focused on addressing two core challenges of caching: cache coherency and ease of use.
+In some cases, maintaining cache coherency is trivial because there is only one cache entry associated with the underlying data.
 However, with more complex data the situation is much more difficult.
 There may be dependencies between objects which means that multiple cache entries need to be invalidated at the same time.
 To further complicate things, the dependencies between objects may be dynamic and must be resolved at run time on a per object basis.
@@ -332,7 +333,7 @@ This leaves the developer to write application-specific code instead of caching 
 \subsubsection{Caching Technologies}
 Most web application caching research revolves around caching strategies.
 It turns out that the underlying cache daemon is largely irrelevant.
-\textsf{Memcached} is by far the most popular web caching system; it is currently in use by Facebook, Wikipedia, YouTube, and countless others \cite{memcachedDotOrg}.
+\textsf{Memcached} is by far the most popular web caching system; it is currently in use by \textsf{Facebook}, \textsf{Wikipedia}, \textsf{YouTube}, and countless others \cite{memcachedDotOrg}.
 
 \textsf{Memcached} is an example of a dynamic cache daemon.
 There are also static caches that are only updated periodically and are not modified directly by the web application.
@@ -355,13 +356,13 @@ For example, Ruby on Rails, a popular web framework, provides a very rich data m
 Gupta, Zeldovich, and Madden developed Cache Genie, an ORM for the Django web framework that automatically handles all necessary caching operations \cite{triggerBasedORM}.
 The project registers Python callbacks for database triggers that are called when queries are run on the database.
 This allows the tool to update and/or invalidate cache entries depending on the queries.
-The major advantage of this approach is that no matter how the data is changed the cache remains consistent because cache invalidation occurs at the data layer.
+The major advantage of this approach is that no matter how the data is changed, the cache remains consistent because cache invalidation occurs at the data layer.
 Other projects have used database triggers with similar results \cite{scalableConsistentCaching}.
 
 \subsection{Cache Consistency}
 \subsubsection{Write-Through Caching}
 Write-through caching is a technique that involves saving the data in the cache at the same time as it is being saved in the persistent store \cite{writeThroughCaching}.
-This technique improves cache hit rate because cache misses will only happen as a result of cache entries being evicted or a server failure.
+This technique improves cache hit rate because cache misses will only happen as a result of cache entry eviction or server failure.
 However, this technique only works for simple data types.
 Any other objects that depend on the current object being saved can't be updated in the cache because that data isn't directly accessible and will require a database lookup.
 
@@ -372,7 +373,7 @@ The timestamp is updated once the object is modified thus invalidating all neces
 This approach also updates the timestamps of any objects that depend on the modified object.
 Generational caching makes fine-grained caching trivial because it isn't necessary to enumerate all potential cache keys.
 Cache entries can be defined arbitrarily and as long as the cache key contains the timestamp it will be invalidated when the underlying object is updated.
-This technique is employed by 37Signals and various other websites \cite{keyBasedCacheExpiration}.
+This technique is employed by \textsf{37Signals} and various other websites \cite{keyBasedCacheExpiration}.
 
 \subsubsection{Prefetching}
 Prefetching content is another common solution for caching.
@@ -407,7 +408,7 @@ In the words of its creators, \begin{quotation}``Memcached is an in-memory key-v
 There are two main operations in \textsf{Memcached}: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
 If the data is in the cache it is returned to the caller, otherwise the result is empty which indicates that the application must retrieve the data elsewhere.
-Data is added to \textsf{Memcached} by calling {\tt set} with a cache key, expiration time, and the data being stored in the cache.
+Data is added to \textsf{Memcached} by calling {\tt set} with a cache key, expiration time, and the data to store in the cache.
 Another specialty command is {\tt getMulti} which is used to retrieve multiple keys in one operation.
 This is used to improve client performance by reducing the network overhead associated with retrieving many keys in succession.
 All \textsf{Memcached} operations are constant time ({\tt O(1)}) with respect to the number of elements stored in it.
@@ -432,8 +433,8 @@ All replacement algorithms operate on a per-slab-class basis.
 
 \textsf{Memcached} is distributed in nature.
 Adding more servers to a web application involves adding the new \textsf{Memcached} instance's IP address and port to the list of servers that the \textsf{Memcached} client library uses.
-Keys map to exactly one server so the total memory available in the \textsf{Memcached} cluster is the sum of memory available on each instance
-The client library performs consistent hashing on any key lookups to determine which server in the cluster to send the request to.
+Keys map to exactly one server so the total memory available in the \textsf{Memcached} cluster is the sum of memory available on each instance.
+The client library performs consistent hashing\cite{consistentHashing} on any key lookups to determine which server in the cluster to send the request to.
 The result is that adding and removing servers doesn't drastically impact hit rate because the majority of keys map to the same servers before and after the change.
 
 
@@ -442,6 +443,7 @@ The result is that adding and removing servers doesn't drastically impact hit ra
 In this chapter, we explain in depth the caching solution we analyze in Chapter X.
 But first, we must reiterate the requirements for such a caching solution.
 
+% TODO: Bulletize this list with R1, R2 etc.
 The caching solution must be largely transparent to the developer.
 The developer should only be required to determine what data to cache, not how to cache it and how to invalidate it.
 It should also allow for finer-grained caching without added complexity.
@@ -518,21 +520,23 @@ Generational caching relies on a value in the primary table being updated whenev
 This value can be incorporated into the object's cache key which ensures that the value in the cache will always be correct for that cache key.
 If the data changes then it has a different cache key so the other cache entries don't need to be invalidated.
 To accomplish this, individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
-In most cases the additional columns are not known before retrieving the object.
+In most cases, the additional columns are not known before retrieving the object.
 In this case, they must be retrieved before checking the cache.
 To avoid hitting the database as much as possible, the entire database tuple that is used to generate the cache key is cached using its primary key.
 This cache entry is deleted anytime the object is saved.
 
 With the entire database tuple we can construct the full cache key and check for its presence in the cache.
 If it exists in the cache then it can be returned to the caller immediately.
-If it doesn't then it must be retrieved from the database.
-Fortunately the primary table tuple has already been fetched from the database so we only need to load the additional data for the object and store it in the cache.
+If it doesn't, then it must be retrieved from the database.
+Fortunately, the primary table tuple has already been fetched from the database so we only need to load the additional data for the object and store it in the cache.
 
 This strategy works especially well when retrieving an object's additional data is very expensive.
 If no additional data is loaded then the ``fully loaded'' object is the exact same as the one fetched when gathering more data to construct the cache key.
 In this case there is no benefit to using generational caching because the data cached by the primary key is the same as the data cached with the full set of columns.
 However, the additional columns can be used in cache keys for data that depends on it to avoid cache invalidation.
 The amount of extra data loaded in addition to the primary table to make the overhead of generational caching worthwhile varies on a case-by-case basis.
+
+% TODO: Diagram.
 
 \section{Implementation}
 \subsection{Existing Infrastructure}
@@ -561,7 +565,7 @@ All cached objects are retrieved with one {\tt getMulti} call and the uncached o
 The uncached objects are then cached for later use.
 
 \subsection{Caching HTML}
-We also cache fragments of HTML because HTML generation can be fairly slow and unperformant.
+We also cache fragments of HTML because HTML generation can be fairly slow and unperforming.
 To help facilitate this, we implemented a few different caching functions for use in HTML templates.
 
 The first set of functions is {\tt cacheStart} and {\tt cacheEnd} which are used for caching a single block of HTML.
@@ -585,17 +589,20 @@ A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 \label{fig:cacheStartExample}
 \end{figure}
 
-The second caching function we wrote is {\tt batchCache} which is designed for caching lots of fragments of HTML.
+The second caching function we wrote is {\tt batchCache} which is designed for caching multiple fragments of HTML.
 The most common use case for it is rendering a list of objects one after the other e.g. search results.
 {\tt batchCache} is better than {\tt cacheStart} and {\tt cacheEnd} for this circumstance because of the network overhead for sequential \textsf{Memcached} calls.
 This is especially true for fragments of HTML whose generation time is close to or less than the average time of a \textsf{Memcached} {\tt get}.
+{\tt batchCache} minimizes network overhead by using \textsf{Memcached}'s {\tt getMulti} operation.
 
 {\tt batchCache} accepts a mapping of string cache key to any type of data.
-The cache keys are used in conjunction with an additional string similar to {\tt cacheStart} to check the cache for HTML.
+Much like {\tt cacheStart}, an additional string is supplied to differentiate these cache entries from others constructed from the same objects.
 A function supplied to {\tt batchCache} is called with an array of all the cache keys and data of the missed cache entries.
-This allows clients to gather data at the last moment possible because it isn't necessary to get the data at all if the HTML is cached.
+This allows clients to gather data at the last moment possible because it may not be necessary to get some data at all if the HTML is cached.
 Then for each of the resulting objects output buffering is started and the supplied rendering function is called with the object as an argument.
 Output buffering is then closed and the resulting HTML is stored in the cache and output to {\tt stdout}.
+
+% TODO: Include detailed example throughout section explaining how this all works for guides.
 
 
 \chapter{Validation}
