@@ -145,14 +145,19 @@ Traditional website scaling techniques aren't effective because of the vast amou
 Nearly all web pages need to be generated on demand from content out of the database.
 Because of this, server load becomes a real issue especially for the database machine.
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{assets/iFixitHomepage.png}
+\caption{iFixit's home page}
+\label{fig:iFixitHomePage}
+\end{figure}
+
 One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
 \textsf{iFixit}'s step-by-step guides and question-and-answer platform are driven largely by user-generated content.
 All repair guides on \textsf{iFixit} are publicly editable and contain rich revision history.
 Consequently, all of the content is stored in a database that must be queried in order to respond to requests for data.
 To reduce server load and decrease response time, \textsf{iFixit} uses \textsf{Memcached} to cache the results of expensive operations.
 However, since the caching strategy used is an ad hoc one, the effectiveness of the cache can be greatly improved by using a different caching technique.
-
-% TODO: Diagrams?
 
 \section{Main Contributions}
 Rough list of topics to touch on:
@@ -172,18 +177,24 @@ The rest of this thesis is organized as follows...
 \label{background}
 
 \section{iFixit}
+
 \subsection{Data and Site Usage}
-\textsf{iFixit}'s most popular content is their step-by-step repair guides.
+\textsf{iFixit}'s most popular content is their step-by-step repair guides which can be seen in Figure ~\ref{fig:iFixitGuideExample}.
 An \textsf{iFixit} guide consists of an ordered list of steps as well as meta data about the guide such as title, summary, parts, and tools.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
 To avoid duplicating content, guides can also be included in other guides as prerequisites.
-The prerequisite guides' steps are included before the actual guide's steps.
+The guide is displayed to the user with its prerequisite guides' steps before the primary guide's steps.
 
-All of \textsf{iFixit}'s content is dynamic.
-That is to say that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
-% TODO: Rewrite this (or not): Additionally, anyone can edit the content due to it being a wiki.
+\begin{figure}[hbtp]
+\centering
+\includegraphics[width=\textwidth,height=0.95\textheight]{assets/iFixitGuideExample.png}
+\caption{Example iFixit guide}
+\label{fig:iFixitGuideExample}
+\end{figure}
 
-% TODO: Screenshots of home page and a guide page. Don't worry about taking up lots of space.
+All of \textsf{iFixit}'s content is dynamic which means that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
+A dynamic website allows users to have rich, modifiable content that is always up-to-date.
+
 \textsf{iFixit} certainly has a more read-heavy workload, however, writes are still fairly common.
 Most notably, \textsf{iFixit} is known for its device ``teardowns.''
 These events consist of opening a brand new device as soon as it becomes available on the market.
@@ -191,8 +202,9 @@ The opening process is documented and updated on \textsf{iFixit}'s website in re
 These events attract thousands of visitors to the site in a short period of time.
 Because of this, the website must be able to handle a read-heavy workload while simultaneously writing to the same data.
 
-In addition to their main website, \textsf{iFixit} runs a Software as a Service (SaaS) business that provides technical documentation to anyone who needs step-by-step instructions.
-The general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
+In addition to their main website, \textsf{iFixit} runs \textsf{Dozuki}, a Software as a Service (SaaS) business that provides technical documentation to anyone who needs step-by-step instructions.
+The same code base powers both \textsf{iFixit} and \textsf{Dozuki} which means that we are only interested performance improvements to both platforms.
+In particular, the general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
 
 The primary bottleneck is the database machine because it has to retrieve data for every incoming HTTP request.
 On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
@@ -207,6 +219,7 @@ However, this machine is used purely as a backup and is not used to improve perf
 
 All of this is built using Amazon Web Services (AWS) including Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront, a Content Delivery Network (CDN), for serving content out of S3, and Elastic Block Store (EBS) for raw block storage on each server instance.
 
+% TODO: Flip image vertically so requests come down. Also replace boxes with "machines symbols"?
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{assets/iFixitArchitecture.png}
@@ -288,7 +301,7 @@ This {\tt User} can later be retrieved by calling {\tt find}.
 \section{iFixit's Current Caching Strategy}
 \textsf{iFixit} currently has a very ad hoc approach to caching.
 Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
-If the object is not in the cache then, it is retrieved and stored in the cache for later use.
+If the object is not in the cache, then it is generated like normal and stored in the cache for later use.
 The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
 \textsf{iFixit} uses two strategies for cache invalidation that are described below.
 
