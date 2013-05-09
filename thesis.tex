@@ -346,17 +346,15 @@ This leaves the developer to write application-specific code instead of caching 
 \subsubsection{Caching Technologies}
 Most web application caching research revolves around caching strategies.
 It turns out that the underlying cache daemon is largely irrelevant.
-\textsf{Memcached} is by far the most popular web caching system; it is currently in use by \textsf{Facebook}, \textsf{Wikipedia}, \textsf{YouTube}, and countless others \cite{memcachedDotOrg}.
+\textsf{Memcached} is an example of a dynamic cache daemon which is well-suite for dynamic websites.
+It is by far the most popular web caching system; it is currently in use by \textsf{Facebook}, \textsf{Wikipedia}, \textsf{YouTube}, and countless others \cite{memcachedDotOrg}.
 
-% TODO: The static cache stuff is repeated from the Terminology section but it's useful to convey that they are typically used for search engines.
-\textsf{Memcached} is an example of a dynamic cache daemon.
-There are also static caches that are only updated periodically and are not modified directly by the web application.
-Static caches are popular for search engines because a large number of search queries return the same data for long periods of time.
+Search engines use static caches as well because a large number of search queries return the same data for long periods of time.
 These queries can be determined by analyzing historical data which would be difficult to do using a dynamic cache \cite{designTradeOffsSearchEngine}.
 In particular, the knapsack problem can be used to fill the static cache if the request frequency and size of cacheable items can be determined \cite{designTradeOffsSearchEngine}.
 Additionally, many papers propose a 2 or 3-level cache that incorporates both static and dynamic caches \cite{cacheAdmissionPolicies, designTradeOffsSearchEngine}.
 
-The exception to this trend is Voras and Zagar's \textsf{Memcached} alternative named SQLCached \cite{sqlCached}.
+The exception to this trend is Voras and Zagar's \textsf{Memcached} alternative, SQLCached \cite{sqlCached}.
 This tool offers a few things that \textsf{Memcached} doesn't: complex data types and rich querying for retrieval and invalidation.
 This is possible because SQLCached uses SQLite as its caching mechanism.
 
