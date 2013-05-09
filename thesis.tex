@@ -201,11 +201,11 @@ The application can freely add, modify, and remove cache entries based on the op
 Dynamic caches have a limited size and may eventually fill to capacity.
 When this occurs items must be removed to make room for new ones.
 The eviction policy determines which cache entries are removed.
-Some caches allow entries to be set with an expire time.
-After the specified time has passed, the entry is expired and future requests for it will result in a cache miss.
 A common eviction policy is Least Recently Used (LRU) which evicts the cache entry that has been accessed least recently.
+Additionally, some caches allow entries to be set with an expire time.
+After the specified time has passed, the entry is expired and future requests for it will result in a cache miss.
 
-Cache coherence, also referred to as cache consistency, is the concept of keeping the data in the cache consistent with the data stored in the primary backing store.
+Cache coherence, also referred to as cache consistency, is the concept of keeping the data in the cache consistent with the data in the primary backing store.
 One such method is to perform cache invalidation upon data modification which removes any modified items from the cache so the data must be generated upon the next request.
 A cache stampede can occur when a cache that is frequently requested is invalidated.
 There are then a series of cache misses followed by a series of duplicated requests to the backing store followed by a series of cache sets.
@@ -348,6 +348,7 @@ Most web application caching research revolves around caching strategies.
 It turns out that the underlying cache daemon is largely irrelevant.
 \textsf{Memcached} is by far the most popular web caching system; it is currently in use by \textsf{Facebook}, \textsf{Wikipedia}, \textsf{YouTube}, and countless others \cite{memcachedDotOrg}.
 
+% TODO: The static cache stuff is repeated from the Terminology section but it's useful to convey that they are typically used for search engines.
 \textsf{Memcached} is an example of a dynamic cache daemon.
 There are also static caches that are only updated periodically and are not modified directly by the web application.
 Static caches are popular for search engines because a large number of search queries return the same data for long periods of time.
@@ -422,6 +423,7 @@ However, Cambazoglu, Junqueira, and Plachouras claim that the eviction policy do
 
 
 \section{Memcached}
+% TODO Example cache key Figure.
 In the words of its creators, \begin{quotation}``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering.\cite{memcachedDotOrg}''\end{quotation}
 There are two main operations in \textsf{Memcached}: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
@@ -482,7 +484,7 @@ For these reasons, we will use generational caching concepts as a starting point
 \subsection{What is being cached}
 This section describes the three primary types of data that are cached in our caching strategy.
 The first data type are objects constructed from query results that represent a tuple in the database (see Figure ~\ref{fig:ormObject}).
-These are used as an ORM and can be used to make modifications to the database as well as just retrieve data for consumption.
+These are used as an ORM which can make modifications to the database as well as retrieve data for consumption.
 The second data type are fragments of HTML generated in templates like the one depicted in Figure ~\ref{fig:htmlTemplate}.
 These typically produce output based on data retrieved from the database and need to be invalidated anytime that data has changed.
 Finally, results of ad hoc queries, like the one in Figure ~\ref{fig:adHocQuery}, are also cached.
@@ -519,6 +521,7 @@ These typically are used in addition to the ORM to gather more complex data.
    \label{fig:htmlTemplate}
 \end{subfigure}
 
+% TODO: Update example to have a generational caching solution and explain solution in implementation.
 \begin{subfigure}[b]{1.0\textwidth}
    \begin{ssp}
    \begin{minted}{sql}
@@ -531,7 +534,7 @@ These typically are used in addition to the ORM to gather more complex data.
    \label{fig:adHocQuery}
 \end{subfigure}
 
-\caption{Data being cached}
+\caption{Data types being cached}
 \label{fig:dataBeingCached}
 \end{figure}
 
@@ -560,7 +563,9 @@ In this case there is no benefit to using generational caching because the data 
 However, the additional columns can be used in cache keys for data that depends on it to avoid cache invalidation.
 The amount of extra data loaded in addition to the primary table to make the overhead of generational caching worthwhile varies on a case-by-case basis.
 
-% TODO: Diagram.
+% TODO: Overview of HTML and query caching?
+
+% TODO: Diagram!
 
 \section{Implementation}
 \subsection{Existing Infrastructure}
@@ -583,6 +588,7 @@ However, we can do one better and cache that operation by using {\tt findAllCach
 For this call, a flag is passed to {\tt findAllCached} that indicates that only the primary table should be loaded.
 Otherwise, all other meta data would be loaded which is exactly what the first {\tt findAllCached} does.
 The recursive call constructs a cache key using only the primary key to avoid infinite recursion.
+% TODO: Example call stack or something.
 
 The \textsf{Memcached} operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential \textsf{Memcached} {\tt get}s.
 All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
@@ -623,6 +629,7 @@ This is especially true for fragments of HTML whose generation time is close to 
 Much like {\tt cacheStart}, an additional string is supplied to differentiate these cache entries from others constructed from the same objects.
 A function supplied to {\tt batchCache} is called with an array of all the cache keys and data of the missed cache entries.
 This allows clients to gather data at the last moment possible because it may not be necessary to get some data at all if the HTML is cached.
+% TODO: Example use of this? Remove this?
 Then for each of the resulting objects output buffering is started and the supplied rendering function is called with the object as an argument.
 Output buffering is then closed and the resulting HTML is stored in the cache and output to {\tt stdout}.
 
@@ -662,7 +669,7 @@ The stats logging table is truncated so only requests during the experiment will
 Finally, \textsf{Memcached} is restarted which empties its contents.
 
 The experiment is then run for the full 24 hours.
-The stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
+Afterwards, the stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
 
 \section{Measured Values}
 The most general value we will compare is page response time, the total amount of time the request spent on our servers.
@@ -673,7 +680,7 @@ The interesting values for \textsf{Memcached} stats are {\tt get} count, hit rat
 The {\tt get} count will likely increase because cache entries are finer-grained.
 Cache hit rate will vary drastically because pages with uncached content will have a large number of misses while pages with cached content will have a large number of hits.
 In general, cache hit rate should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
-Time spent in \textsf{Memcached} calls will likely increase more content is being cached.
+Time spent in \textsf{Memcached} calls will likely increase because more content is being cached.
 
 Finally, the interesting values for \textsf{MySQL} are query count and total query time.
 Query count should go down because the cache should serve more requests that previously were handled by the database.
