@@ -253,7 +253,8 @@ Dynamic caches have a limited size and may eventually fill to capacity.
 When this occurs items must be removed to make room for new ones.
 The eviction policy determines which cache entries are removed.
 Some caches allow entries to be set with an expire time.
-After the specified time has passed, the entry is expired and future requests for it will result in a cacheresult in a cache  miss.
+After the specified time has passed, the entry is expired and future requests for it will result in a cache miss.
+A common evicton policy is Least Recently Used (LRU) which evicts the cache entry that has been accessed least recently.
 
 Cache coherence, also referred to as cache consistency, is the concept of keeping the data in the cache consistent with the data stored in the primary backing store.
 One such method is to perform cache invalidation upon data modification which removes any modified items from the cache so the data must be generated upon the next request.
@@ -381,11 +382,16 @@ Any other objects that depend on the current object being saved can't be updated
 \subsubsection{Generational Caching}
 Another caching technique is referred to as key-based cache expiration \cite{keyBasedCacheExpiration} and generational caching \cite{generationalCaching}.
 The idea is that a timestamp, which corresponds to the last time the object was updated, is included in the key for any cache entries that depend on it.
-The timestamp is updated once the object is modified thus invalidating all necessary cache entries.
+The timestamp is updated every time the object is modified thus invalidating all necessary cache entries.
 This approach also updates the timestamps of any objects that depend on the modified object.
 Generational caching makes fine-grained caching trivial because it isn't necessary to enumerate all potential cache keys.
 Cache entries can be defined arbitrarily and as long as the cache key contains the timestamp it will be invalidated when the underlying object is updated.
 This technique is employed by \textsf{37Signals} and various other websites \cite{keyBasedCacheExpiration}.
+
+One downside to this method is the amount of cache garbage that is generated because cache entries are never deleted.
+However, this isn't much of an issue because most caching technologies use an LRU eviction policy so unused cache entries are eventually deleted when the cache fills up.
+This is true of \textsf{Memcached} which is used by \textsf{37Signals} and \textsf{iFixit}.
+Additionally, increasing the cache's capacity to make this even less of an issue is trivial with \textsf{Memcached}.
 
 \subsubsection{Prefetching}
 Prefetching content is another common solution for caching.
@@ -452,7 +458,7 @@ The result is that adding and removing servers doesn't drastically impact hit ra
 
 \chapter{Design and Implementation}
 \label{designAndImplementation}
-In this chapter, we explain in depth the caching solution we analyze in Chapter X.
+In this chapter, we explain in depth the caching solution we implemented for \textsf{iFixit} and analyze in Chapter X.
 But first, we must reiterate \textsf{iFixit}'s requirements for such a caching solution.
 
 \begin{description}
@@ -463,15 +469,18 @@ But first, we must reiterate \textsf{iFixit}'s requirements for such a caching s
    \item[R4] It must result in increased performance in regards to response time and database load.
 \end{description}
 
-% TODO: State that we are basing our solution on generational caching (here or elsewhere).
-
 The rest of this chapter is organized as follows.
 In section 3.1 we explain the high-level design of the caching strategy implemented for \textsf{iFixit}.
 In section 3.2 we go over the details of implementing the design in \textsf{iFixit}'s code base.
 
 \section{Design}
+Out of existing solutions, generational caching most closely meets these requirements.
+This is because the cache key changes whenever the underlying data changes so cache entries no longer need to be invalidated.
+This allows there to be a large number of cache entries that depend on a single piece of data and the values will not need to be invalidated.
+For these reasons, we will use generational caching concepts as a starting point for our caching solution.
+
 \subsection{What is being cached}
-This section describes the three primary types of data that are cached.
+This section describes the three primary types of data that are cached in our caching strategy.
 The first data type are objects constructed from query results that represent a tuple in the database (see Figure ~\ref{fig:ormObject}).
 These are used as an ORM and can be used to make modifications to the database as well as just retrieve data for consumption.
 The second data type are fragments of HTML generated in templates like the one depicted in Figure ~\ref{fig:htmlTemplate}.
