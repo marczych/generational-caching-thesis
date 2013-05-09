@@ -55,6 +55,7 @@
 % ---------------------------------------
 
 
+% TODO: Fix weird spacing around code figures.
 
 
 \begin{document}
@@ -488,15 +489,17 @@ These typically produce output based on data retrieved from the database and nee
 Finally, results of ad hoc queries, like the one in Figure ~\ref{fig:adHocQuery}, are also cached.
 These typically are used in addition to the ORM to gather more complex data.
 
-\begin{figure}[h]
+\begin{figure}[hbtp]
 \begin{subfigure}[b]{1.0\textwidth}
    \begin{ssp}
    \begin{minted}{php}
    <?php
-   class User extends ORMObject {
-      private $userid;
-      private $name;
-      private $email;
+   class Guide extends ORMObject {
+      private $guideid;
+      private $langid;
+      private $title;
+      private $difficulty;
+      private $steps;
    }
    ?>
    \end{minted}
@@ -508,10 +511,14 @@ These typically are used in addition to the ORM to gather more complex data.
 \begin{subfigure}[b]{1.0\textwidth}
    \begin{ssp}
    \begin{minted}{php}
-   <div class="user">
-      <h3><?= $user->name ?></h3>
-      <p>Userid: <?= $user->userid ?></p>
-      <p>Email: <?= $user->email ?></p>
+   <div class="guide">
+      <h3><?= $guide->title ?></h3>
+      <p>Difficulty: <?= $guide->difficulty ?></p>
+      <? foreach ($guide->steps as $step): ?>
+         <div class="step">
+            <?= $step->title ?>
+         </div>
+      <? endforeach ?>
    </div>
    \end{minted}
    \end{ssp}
@@ -519,13 +526,12 @@ These typically are used in addition to the ORM to gather more complex data.
    \label{fig:htmlTemplate}
 \end{subfigure}
 
-% TODO: Update example to have a generational caching solution and explain solution in implementation.
 \begin{subfigure}[b]{1.0\textwidth}
    \begin{ssp}
    \begin{minted}{sql}
    SELECT *
-   FROM users
-   WHERE email LIKE "%@gmail.com"
+   FROM steps
+   WHERE guideid = ? AND langid = ?
    \end{minted}
    \end{ssp}
    \caption{Ad hoc query}
@@ -608,7 +614,7 @@ A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 \begin{figure}[h]
 \begin{ssp}
 \begin{minted}{php}
-<? if (!cacheStart($ormObject, 'view-all', CACHE_FOREVER)): ?>
+<? if (!cacheStart($guide, 'view-all', CACHE_FOREVER)): ?>
    <? /* HTML generation */ ?>
 <? cacheEnd(); endif; ?>
 \end{minted}
@@ -630,6 +636,31 @@ This allows clients to gather data at the last moment possible because it may no
 % TODO: Example use of this? Remove this?
 Then for each of the resulting objects output buffering is started and the supplied rendering function is called with the object as an argument.
 Output buffering is then closed and the resulting HTML is stored in the cache and output to {\tt stdout}.
+
+\subsection{Caching Ad Hoc Queries}
+The same approach can be used for caching HTML and ad hoc queries.
+As long as the results of the query can only change when the ORM object's cache key changes, the cache entries will be invalidated as necessary.
+
+% TODO: Explain this a bit.
+\begin{figure}[h]
+\begin{ssp}
+\begin{minted}{php}
+<?php
+$cacheKey = $guide->cacheKey() . "_steps";
+$steps = cacheGetAndSet($cacheKey, CACHE_FOREVER, function() use ($guide) {
+   return dbGet("
+      SELECT *
+      FROM steps
+      WHERE guideid = ? AND langid = ?",
+    [$guide->guideid, $guide->langid]);
+});
+?>
+\end{minted}
+\end{ssp}
+\caption{Ad hoc query caching}
+\label{fig:adHocQueryCaching}
+\end{figure}
+
 
 % TODO: Include detailed example throughout section explaining how this all works for guides.
 
