@@ -176,6 +176,77 @@ The rest of this thesis is organized as follows...
 \chapter{Background}
 \label{background}
 
+\section{Terminology}
+At a high level, a cache is used to store results of operations so future requests can be processed faster.
+A cache is typically not the primary storage location for data.
+In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
+A cache entry is a single piece of data stored in the cache that can be uniquely identified.
+A cache hit occurs when the requested cache entry is in the cache and no further action is required.
+A cache miss occurs when the requested cache entry is not in the cache and it must be retrieved from its primary location.
+
+Caching is effective because cache lookups are much faster than retrieving data from its persistent location.
+Additionally, caching exploits locality.
+Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
+Spatial locality is the idea that items in nearby storage locations are referenced in close proximity to one another.
+As of late, spatial locality has been broadened for web sites to include access patterns such as recommended and related content.
+
+Caches can be of the static or dynamic type.
+A static cache is one that is not updated as a result of the application running.
+The application can request data from the cache but it cannot add, modify, or remove cache entries.
+However, the cache is periodically updated outside of the application to keep it mostly up to date.
+The timeframe for this differs from application to application but is largely a function of how often the underlying data changes.
+In contrast, a dynamic cache is one that can be updated as a result of the application execution.
+The application can freely add, modify, and remove cache entries based on the operations it is performing due to requests.
+
+Dynamic caches have a limited size and may eventually fill to capacity.
+When this occurs items must be removed to make room for new ones.
+The eviction policy determines which cache entries are removed.
+Some caches allow entries to be set with an expire time.
+After the specified time has passed, the entry is expired and future requests for it will result in a cache miss.
+A common eviction policy is Least Recently Used (LRU) which evicts the cache entry that has been accessed least recently.
+
+Cache coherence, also referred to as cache consistency, is the concept of keeping the data in the cache consistent with the data stored in the primary backing store.
+One such method is to perform cache invalidation upon data modification which removes any modified items from the cache so the data must be generated upon the next request.
+A cache stampede can occur when a cache that is frequently requested is invalidated.
+There are then a series of cache misses followed by a series of duplicated requests to the backing store followed by a series of cache sets.
+These should be avoided if possible because of the redundant work done by each request.
+If not handled properly, this event alone can crash web sites.
+
+The ActiveRecord pattern is a common technique used in web applications to interact with the data stored in a database.
+In the host language, the developer creates classes that represent tables in the database.
+This becomes an object-relational mapping (ORM) in that the properties of the class represent columns in the database.
+Rows can be inserted, updated, and removed by calling the {\tt insert}, {\tt update}, {\tt delete} methods on the object, respectively.
+This is demonstrated in Figure ~\ref{fig:activeRecordExample}.
+
+\begin{figure}[h]
+\begin{ssp}
+\begin{minted}{php}
+<?php
+function createUser($userid, $name, $email) {
+   $user = new User();
+   $user->userid = $userid;
+   $user->name = $name;
+   $user->email = $email;
+   $user->insert();
+   return $user;
+}
+
+function getUser($userid) {
+   $user = User::find($userid);
+   return $user;
+}
+?>
+\end{minted}
+\end{ssp}
+\caption{Basic ActiveRecord example.}
+\label{fig:activeRecordExample}
+\end{figure}
+
+In this example, {\tt User} is a class that implements the ActiveRecord pattern.
+A new user is inserted into the database by creating a new {\tt User} object, assigning the properties of the object corresponding to the database columns, and calling {\tt insert}.
+This {\tt User} can later be retrieved by calling {\tt find}.
+
+
 \section{iFixit}
 
 \subsection{Data and Site Usage}
@@ -226,78 +297,8 @@ All of this is built using Amazon Web Services (AWS) including Elastic Cloud Com
 \label{fig:iFixitArchitecture}
 \end{figure}
 
-\section{Terminology}
-At a high level, a cache is used to store results of operations so future requests can be processed faster.
-A cache is typically not the primary storage location for data.
-In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
-A cache entry is a single piece of data stored in the cache that can be uniquely identified.
-A cache hit occurs when the requested cache entry is in the cache and no further action is required.
-A cache miss occurs when the requested cache entry is not in the cache and it must be retrieved from its primary location.
 
-Caching is effective because cache lookups are much faster than retrieving data from its persistent location.
-Additionally, caching exploits locality.
-Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
-Spatial locality is the idea that items in nearby storage locations are referenced in close proximity to one another.
-As of late, spatial locality has been broadened for web sites to include access patterns such as recommended and related content.
-
-Caches can be of the static or dynamic type.
-A static cache is one that is not updated as a result of the application running.
-The application can request data from the cache but it cannot add, modify, or remove cache entries.
-However, the cache is periodically updated outside of the application to keep it mostly up to date.
-The timeframe for this differs from application to application but is largely a function of how often the underlying data changes.
-In contrast, a dynamic cache is one that can be updated as a result of the application execution.
-The application can freely add, modify, and remove cache entries based on the operations it is performing due to requests.
-
-Dynamic caches have a limited size and may eventually fill to capacity.
-When this occurs items must be removed to make room for new ones.
-The eviction policy determines which cache entries are removed.
-Some caches allow entries to be set with an expire time.
-After the specified time has passed, the entry is expired and future requests for it will result in a cache miss.
-A common evicton policy is Least Recently Used (LRU) which evicts the cache entry that has been accessed least recently.
-
-Cache coherence, also referred to as cache consistency, is the concept of keeping the data in the cache consistent with the data stored in the primary backing store.
-One such method is to perform cache invalidation upon data modification which removes any modified items from the cache so the data must be generated upon the next request.
-A cache stampede can occur when a cache that is frequently requested is invalidated.
-There are then a series of cache misses followed by a series of duplicated requests to the backing store followed by a series of cache sets.
-These should be avoided if possible because of the redundant work done by each request.
-If not handled properly, this event alone can crash web sites.
-
-The ActiveRecord pattern is a common technique used in web applications to interact with the data stored in a database.
-In the host language, the developer creates classes that represent tables in the database.
-This becomes an object-relational mapping (ORM) in that the properties of the class represent columns in the database.
-Rows can be inserted, updated, and removed by calling the {\tt insert}, {\tt update}, {\tt delete} methods on the object, respectively.
-This is demonstrated in Figure ~\ref{fig:activeRecordExample}.
-
-\begin{figure}[h]
-\begin{ssp}
-\begin{minted}{php}
-<?php
-function createUser($userid, $name, $email) {
-   $user = new User();
-   $user->userid = $userid;
-   $user->name = $name;
-   $user->email = $email;
-   $user->insert();
-   return $user;
-}
-
-function getUser($userid) {
-   $user = User::find($userid);
-   return $user;
-}
-?>
-\end{minted}
-\end{ssp}
-\caption{Basic ActiveRecord example.}
-\label{fig:activeRecordExample}
-\end{figure}
-
-In this example, {\tt User} is a class that implements the ActiveRecord pattern.
-A new user is inserted into the database by creating a new {\tt User} object, assigning the properties of the object corresponding to the database columns, and calling {\tt insert}.
-This {\tt User} can later be retrieved by calling {\tt find}.
-
-
-\section{iFixit's Current Caching Strategy}
+\subsection{iFixit's Current Caching Strategy}
 \textsf{iFixit} currently has a very ad hoc approach to caching.
 Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
 If the object is not in the cache, then it is generated like normal and stored in the cache for later use.
@@ -573,7 +574,7 @@ Most of the work performed while implementing the caching strategy involved augm
 In order to add caching to {\tt findAllByKey} we add a wrapper method called {\tt findAllCached}.
 At a very high-level, this method constructs cache keys for the given primary keys and performs a cache {\tt getMulti} on them.
 Any objects that were not cached are retrieved from the database using {\tt findAllByKey} and are then stored in the cache.
-% TDOO: Picture.
+% TODO: Picture.
 
 We allow classes derived from the ORM to specify which columns in addition to the primary key to include in the cache key.
 More data must be retrieved from the database to construct the cache key if only the primary keys are provided to {\tt findAllCached} and the derived class specifies additional cache key columns.
