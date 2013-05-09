@@ -665,28 +665,25 @@ The experiment is then run for the full 24 hours.
 The stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
 
 \section{Measured Values}
-Most of this is pretty bad... include a few important values that are very concrete.
+The most general value we will compare is page response time, the total amount of time the request spent on our servers.
+Response time should decrease because more data is cached and can be returned faster than before.
+Similarly, HTML generation time should decrease because fragments of HTML are now being cached.
 
-Some values that should be increased include cache hit rate and requests per second.
-Some values that should be decreased include server load and page response time.
-However, merely comparing the two sets of data will not be an accurate picture of the situation.
-For example, cache hit rate may be increased as well as server load.
-This could be the result of an optimistic prefetching algorithm that caches values before they are requested in the event that they will be requested soon.
-The pivotal question is regarding whether or not the increased server load is worth the increased hit rate.
+The interesting values for \textsf{Memcached} stats are {\tt get} count, hit rate, and time spent in cache calls.
+The {\tt get} count will likely increase because cache entries are finer-grained.
+Cache hit rate will vary drastically because pages with uncached content will have a large number of misses while pages with cached content will have a large number of hits.
+In general, cache hit rate should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
+Time spent in \textsf{Memcached} calls will likely increase more content is being cached.
 
-Other criteria, such as ease of use and cache freshness, are harder to measure and validate.
-Cache freshness involves measuring how long a stale cache entry is served after there is a fresh version available.
-In particular, some amount of cache staleness is acceptable but the line is blurred especially in the presence of performance gains.
-
-Ease of use is even more difficult to measure.
-A caching mechanism that requires a diligent programmer to carefully hand craft the caching algorithm with every feature added is not very easy to use.
-On the other hand, a caching mechanism that operates behind the scenes without the programmer's knowledge is very easy to use.
-Measuring this will be a very subjective matter.
+Finally, the interesting values for \textsf{MySQL} are query count and total query time.
+Query count should go down because the cache should serve more requests that previously were handled by the database.
+Additionally, more content is retrieved in batch so there are fewer queries which reduces network overhead.
+Both of these should cause a decrease in total database query time.
 
 
 \section{Future Work Ideas}
 \label{futureWork}
-How size of cache affects hit rate over long periods of time
+How size of cache affects hit rate over long periods of time to evaluate if it's okay to not invalidate anything.
 
 
 % ------------- End main chapters ----------------------
