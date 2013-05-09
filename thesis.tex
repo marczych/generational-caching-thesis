@@ -213,8 +213,8 @@ On the contrary, application machines can easily scale horizontally by load bala
 In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure ~\ref{fig:iFixitArchitecture}, at the time of this writing.
 All of \textsf{iFixit}'s traffic is first directed to a load balancer which selects an application machine to handle the request.
 At any given time there are four to eight application machines that run \textsf{iFixit}'s core software which is written in PHP.
-They get all of their data from one master database machine running the Percona build of MySQL which handles all reads and writes.
-There is also one slave database machine that is asynchronously replicated from the master database using MySQL's built in replication.
+They get all of their data from one master database machine running the Percona build of \textsf{MySQL} which handles all reads and writes.
+There is also one slave database machine that is asynchronously replicated from the master database using \textsf{MySQL}'s built in replication.
 However, this machine is used purely as a backup and is not used to improve performance.
 
 All of this is built using Amazon Web Services (AWS) including Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront, a Content Delivery Network (CDN), for serving content out of S3, and Elastic Block Store (EBS) for raw block storage on each server instance.
@@ -631,14 +631,42 @@ Output buffering is then closed and the resulting HTML is stored in the cache an
 
 \chapter{Validation}
 \label{validation}
-This section was written for 590 when I didn't have a clear topic so this will have to be tweaked once I actually run the experiments.
-Other similar papers should be consulted to get a good experimental setup that is accepted in the community.
 
-\section{General Approach}
 Validating my work is a fairly straightforward process.
-The basic approach will involve gathering various statistics with and without my approach during an experiment based on a repeatable set of input data.
+The basic approach will involve gathering various statistics with and without my caching strategy during an experiment based on a repeatable and representative set of input data.
+
+\section{Experimental Setup}
+We recorded requests to \textsf{www.iFixit.com} for a full week and selected two 24-hour sets of representative data to use as input to the experiments.
+The first data set is typical traffic during a weekday which involves accessing a high breadth of content at a fairly steady pace.
+The second data set is traffic during \textsf{iFixit}'s Samsung Galaxy S4 Teardown\cite{ifixitGalaxyS4Teardown} which involves a large number of reads and writes to the same resource.
+
+Since our caching strategy was only applied to guides, the request logs are filtered to only include requests viewing or modifying guides.
+Otherwise, the results would be affected by other non-guide requests which are not using our generational caching method.
+
+The test environment is an isolated clone of \textsf{iFixit}'s production architecture consisting of a load balancer, two application machines, and a database machine.
+Since the traffic replays are a subset of \textsf{iFixit}'s traffic, two application machines is more than enough to handle the load.
+All machines are AWS EC2 nodes running 64-bit CentOS 5.4.
+The load balancer is a {\tt m1.large} instance with 7.5 GiB memory and 4 EC2 Compute Units (2 virtual cores with 2 EC2 Compute Units each).
+This machine runs \textsf{Memcached} which is used by the application machines.
+The database machine is a {\tt m1.xlarge} instance with 15 GiB of memory and 8 EC2 Compute Units (4 virtual cores with 2 EC2 Compute Units each).
+The application machines are {\tt c1.medium} instances with 1.7 GiB of memory and 5 EC2 Compute Units (2 virtual cores with 2.5 EC2 Compute Units each).
+More information regarding EC2 specs can be found on AWS's website \cite{awsInstanceTypes}.
+
+We then replay the requests in the test sets with and without our caching strategy for a total of 4 runs.
+Requests are performed using a NodeJS script running on the load balancer to reduce latency between the simulated client and the web servers.
+Every request is profiled server-side --- \textsf{Memcached}, \textsf{MySQL}, and CPU usage statistics are recorded to the database.
+
+Before each experiment is run, the database is restored to the state it was in when the requests were originally made to \textsf{www.iFixit.com}.
+This ensures that the data is the same between runs and all views and edits are working with the same data.
+The stats logging table is truncated so only requests during the experiment will be in the table when the test is complete.
+Finally, \textsf{Memcached} is restarted which empties its contents.
+
+The experiment is then run for the full 24 hours.
+The stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
 
 \section{Measured Values}
+Most of this is pretty bad... include a few important values that are very concrete.
+
 Some values that should be increased include cache hit rate and requests per second.
 Some values that should be decreased include server load and page response time.
 However, merely comparing the two sets of data will not be an accurate picture of the situation.
@@ -655,36 +683,10 @@ A caching mechanism that requires a diligent programmer to carefully hand craft 
 On the other hand, a caching mechanism that operates behind the scenes without the programmer's knowledge is very easy to use.
 Measuring this will be a very subjective matter.
 
-\section{Experimental Setup}
-Developing an experiment to get consistent results is crucial.
-I am planning on recording all site traffic during a period of time and replaying it during the experiments.
-This ensures that the workload will be the same across all tests.
 
-First an unaltered log of site traffic will be replayed on both systems to emulate real world traffic patterns.
-Next this log will be extrapolated to simulate increased site traffic.
-Multiple levels of increased site traffic will be run on both systems as a comparison of their merits of scalability.
-Scalability tests can be split into two separate groups: general traffic and targetted traffic.
-General traffic isn't targetted to any specific pages; requests to all pages are uniformly increased.
-This is similar to increasing a site's general popularity.
-Targetted traffic on the other hand has increased traffic to a small subset of content.
-This simulates special events such as press and social media where a page goes viral for a short amount of time.
-Both types of traffic are realistic and are useful measures for the effectiveness of caching strategies.
-
-The contents of the database and \textsf{Memcached} must be the same at the start of the experiments.
-The contents of \textsf{Memcached} can be flushed to ensure a consistent repeatable experiment.
-However, this setup isn't very realistic because the contents of cache is never completely empty in production and may skew results depending on differences in the caching algorithms.
-To mitigate this issue, experiments can be run for a period of time before statistics are collected to make the contents of cache more realistic.
-
-Ensuring the database is in a consistent state is a more difficult matter.
-Simply performing a dump of the database won't work because of how long it takes to do so.
-Instead, a slave database can be set up to be replicated from the master database.
-The instant site traffic starts being recorded the slave will stop replication and the dump will be performed on the slave database.
-The contents of the test database will be populated with this dump to guarantee a repeatable experiment.
-The only problem with this approach is that populating a database from a MySQL dump may take a significant amount of tme depending on the size of the data.
-This will merely increase the time between tests.
-
-All experiments will be run on a duplicate set of machines that mirror the architecture that is used in production.
-This ensures that the results gathered will be consistent with how they will perform in production.
+\section{Future Work Ideas}
+\label{futureWork}
+How size of cache affects hit rate over long periods of time
 
 
 % ------------- End main chapters ----------------------
