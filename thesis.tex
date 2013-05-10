@@ -640,17 +640,18 @@ This allows clients to gather data at the last moment possible because it may no
 Then for each of the resulting objects output buffering is started and the supplied rendering function is called with the object as an argument.
 Output buffering is then closed and the resulting HTML is stored in the cache and output to {\tt stdout}.
 
-The same approach can be used for caching HTML and ad hoc queries.
-As long as the results of the query can only change when the ORM object's cache key changes, the cache entries will be invalidated as necessary.
+This approach can also be used for caching ad hoc query results.
+Figure ~\ref{fig:adHocQueryCaching} demonstrates caching an ad hoc query using {\tt cacheGetAndSet}.
+The cache key is constructed using the guide's full cache key and the string {\tt -steps}.
+If the value is not cached, {\tt cacheGetAndSet} calls the provided function and caches the result.
 
-% TODO: Explain this a bit.
 \begin{figure}[h]
 \begin{ssp}
 \begin{minted}{php}
 <?php
-$cacheKey = $guide->cacheKey() . "_steps";
+$cacheKey = $guide->cacheKey() . "-steps";
 $steps = cacheGetAndSet($cacheKey, function() use ($guide) {
-   return dbGet("
+   return dbQuery("
       SELECT *
       FROM steps
       WHERE guideid = ? AND langid = ?",
