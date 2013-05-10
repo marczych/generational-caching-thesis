@@ -514,11 +514,13 @@ class Guide extends ORMObject {
 <div class="guide">
    <h3><?= $guide->title ?></h3>
    <p>Difficulty: <?= $guide->difficulty ?></p>
+   <div class="steps">
    <? foreach ($guide->steps as $step): ?>
       <div class="step">
          <?= $step->title ?>
       </div>
    <? endforeach ?>
+   </div>
 </div>
 \end{minted}
 \end{ssp}
@@ -715,13 +717,28 @@ The most common use case for it is rendering a list of objects one after the oth
 This is especially true for fragments of HTML whose generation time is close to or less than the average time of a \textsf{Memcached} {\tt get}.
 {\tt batchCache} minimizes network overhead by using \textsf{Memcached}'s {\tt getMulti} operation.
 
-{\tt batchCache} accepts a mapping of string cache key to any type of data.
-Much like {\tt cacheStart}, an additional string is supplied to differentiate these cache entries from others constructed from the same objects.
-{\tt batchCache} calls \textsf{Memcached} {\tt getMulti} with the provided array of cache keys.
-For each cache miss, output buffering is started and the supplied rendering function is called with the data associated with the cache key.
+{\tt batchCache} accepts an array of ORM objects and, much like {\tt cacheStart}, an additional string to differentiate these cache entries from others constructed from the same objects.
+{\tt batchCache} calls \textsf{Memcached} {\tt getMulti} with the cache keys identifying the provided objects.
+For each cache miss, output buffering is started and the supplied rendering function is called with the ORM object.
 Output buffering is then closed and the resulting HTML is stored in the cache and added to the array of resulting HTML.
 Finally, every fragment of HTML is output to {\tt stdout} in the same order as they were provided.
-% TODO: Figure for batchCache.
+This is demonstrated for {\tt Step}s in Figure ~\ref{fig:batchCacheStep} which is the cached steps version of Figure ~\ref{fig:htmlTemplate}.
+
+\begin{figure}[h]
+\begin{ssp}
+\begin{minted}{php}
+<div class="steps">
+<? batchCache($guide->steps, 'step_view', function($step) { ?>
+   <div class="step">
+      <?= $step->title ?>
+   </div>
+<? }); ?>
+</div>
+\end{minted}
+\end{ssp}
+\caption{Example usage of batchCache for Steps.}
+\label{fig:batchCacheStep}
+\end{figure}
 
 The same approach can be applied to caching ad hoc query results.
 Figure ~\ref{fig:adHocQueryCaching} demonstrates this by using {\tt cacheGetAndSet}.
