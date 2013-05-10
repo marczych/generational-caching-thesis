@@ -584,7 +584,13 @@ Although only {\tt Step}s are described in this example, there are several other
 For fragments of HTML and ad hoc query results that can only change when the ORM object changes, the object's full cache key can be used in addition to a qualifying string such as {\tt view-all-html}.
 Any cache entry that does this will be automatically invalidated when the object changes because the cache key will change.
 This allows for fine-grained caching without the need to enumerate and delete all keys that depend on an object.
-% TODO: Mention regexing out small pieces that change?
+
+Occasionally HTML fragments contain data that changes at different times than the ORM object.
+That value could be incorporated into the cache key but it would fragment the cache into many different possibilities thus reducing its effectiveness.
+For example, {\tt Step}s' {\tt revisionids} are updated every time they are modified.
+However, the step number displayed to the user can be different for the same step on different guides because of the order of prerequisite guides.
+Rather than including the step number in the cache key, a placeholder value can be used in place of the step number.
+The placeholder is replaced with the actual step number before it is output to the user.
 
 \begin{figure}[h]
 \begin{subfigure}[h]{0.5\textwidth}
