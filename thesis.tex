@@ -543,23 +543,34 @@ These typically are used in addition to the ORM to gather more complex data.
 \end{figure}
 
 \subsection{Caching Approach}
-We will first discuss how we incorporate caching into our ORM.
+We will first discuss how we incorporate caching into our ORM and how it is used for \textsf{iFixit}'s guides.
+The guide and step ORM objects can be found in Figure ~\ref{fig:cachingExample}.
+
 The primary key uniquely identifies a tuple in the database and can be used with the ORM to select a single record.
 Once the record is loaded, other data not contained in the primary table is loaded and then the entire object is cached.
+For guides, the {\tt Guide} object is retrieved from the DB and then the {\tt Step} objects are loaded afterwards.
 By default, the cache key for objects is just the primary key.
 
 Generational caching relies on a value in the primary table being updated whenever any other data in the table is updated.
 This value can be incorporated into the object's cache key which ensures that the value in the cache will always be correct for that cache key.
 If the data changes then it has a different cache key so the other cache entries don't need to be invalidated.
 To accomplish this, individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
-In most cases, the additional columns are not known before retrieving the object.
-In this case, they must be retrieved before checking the cache.
+For guides, this value is the {\tt modified\_date} which is set to the current time in microseconds anytime the guide or any of its children are modified.
+For example, a {\tt Guide} could have cache keys {\tt Guide/1234-en-1368160868.395738} and {\tt Guide/1234-en-1368173958.773968} before and after it is modified, respectively.
+
+In most cases, the additional columns are not known before retrieving the object and must be retrieved before checking the cache.
+This is typically because the request URL only specifies the primary key because the {\tt modified\_date} isn't known externally.
 To avoid hitting the database as much as possible, the entire database tuple that is used to generate the cache key is cached using its primary key.
 This cache entry is deleted anytime the object is saved.
 
-With the entire database tuple we can construct the full cache key and check for its presence in the cache.
+For example, only the {\tt guideid} and {\tt langid} are initially available when a guide request hits {\tt iFixit}'s servers.
+For a {\tt guideid} and {\tt langid} of {\tt 1234} and {\tt en}, respectively, the cache is checked for the {\tt Guide} object using {\tt Guide/1234-en} as the cache key.
+If it isn't found in the cache, it is retrieved from the database and stored in the cache.
+This object does not contain any data from other tables such as {\tt Steps}.
+The full cache key can then be constructed, {\tt Guide/1234-en-1368164354.918344} for example, and used to fetch the rest of the content.
+
 If it exists in the cache then it can be returned to the caller immediately.
-If it doesn't, then it must be retrieved from the database.
+Otherwise, it must be retrieved from the database.
 Fortunately, the primary table tuple has already been fetched from the database so we only need to load the additional data for the object and store it in the cache.
 
 This strategy works especially well when retrieving an object's additional data is very expensive.
@@ -567,12 +578,75 @@ If no additional data is loaded then the ``fully loaded'' object is the exact sa
 In this case there is no benefit to using generational caching because the data cached by the primary key is the same as the data cached with the full set of columns.
 However, the additional columns can be used in cache keys for data that depends on it to avoid cache invalidation.
 The amount of extra data loaded in addition to the primary table to make the overhead of generational caching worthwhile varies on a case-by-case basis.
+This approach is effective for {\tt Guide}s because there is a large amount of additional data to retrieve.
+Although only {\tt Step}s are described in this example, there are several other tables that must be queried to display a guide to the user.
 
 For fragments of HTML and ad hoc query results that can only change when the ORM object changes, the object's full cache key can be used in addition to a qualifying string such as {\tt view-all-html}.
 Any cache entry that does this will be automatically invalidated when the object changes because the cache key will change.
 This allows for fine-grained caching without the need to enumerate and delete all keys that depend on an object.
+% TODO: Mention regexing out small pieces that change?
 
-% TODO: Diagram!
+\begin{figure}[h]
+\begin{subfigure}[h]{0.5\textwidth}
+\begin{ssp}
+\begin{minted}{php}
+<?php
+class Guide extends ORMObject {
+   protected static $cacheCols =
+    ['modified_date'];
+
+   // Primary key.
+   protected $guideid;
+   protected $langid;
+
+   // Columns from guide table.
+   protected $title;
+   protected $difficulty;
+   protected $modified_date;
+   protected $revisionid;
+
+   // Retrieved from other tables.
+   protected $steps;
+   protected $parts;
+}
+?>
+\end{minted}
+\end{ssp}
+\caption{Guide ORM object}
+\label{fig:guideORMTable}
+\end{subfigure}
+\begin{subfigure}[h]{0.5\textwidth}
+\begin{ssp}
+\begin{minted}{php}
+<?php
+class Step extends ORMObject {
+   protected static $cacheCols =
+    ['revisionid'];
+
+   // Primary key.
+   private $stepid;
+
+   // Columns from step table.
+   private $guideid;
+   private $langid;
+   private $title;
+   private $orderby;
+   private $revisionid;
+
+   // Retrieved from other tables.
+   private $media;
+   private $lines;
+}
+?>
+\end{minted}
+\end{ssp}
+\caption{Step ORM object}
+\label{fig:stepORMObject}
+\end{subfigure}
+\caption{Example guide and step ORM objects}
+\label{fig:cachingExample}
+\end{figure}
+
 
 \section{Implementation}
 \subsection{Existing Infrastructure}
