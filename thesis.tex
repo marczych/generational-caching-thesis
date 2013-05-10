@@ -542,7 +542,8 @@ These typically are used in addition to the ORM to gather more complex data.
 \label{fig:dataBeingCached}
 \end{figure}
 
-\subsection{ORM Caching}
+\subsection{Caching Approach}
+We will first discuss how we incorporate caching into our ORM.
 The primary key uniquely identifies a tuple in the database and can be used with the ORM to select a single record.
 Once the record is loaded, other data not contained in the primary table is loaded and then the entire object is cached.
 By default, the cache key for objects is just the primary key.
@@ -567,7 +568,9 @@ In this case there is no benefit to using generational caching because the data 
 However, the additional columns can be used in cache keys for data that depends on it to avoid cache invalidation.
 The amount of extra data loaded in addition to the primary table to make the overhead of generational caching worthwhile varies on a case-by-case basis.
 
-% TODO: Overview of HTML and query caching?
+For fragments of HTML and ad hoc query results that can only change when the ORM object changes, the object's full cache key can be used in addition to a qualifying string such as {\tt view-all-html}.
+Any cache entry that does this will be automatically invalidated when the object changes because the cache key will change.
+This allows for fine-grained caching without the need to enumerate and delete all keys that depend on an object.
 
 % TODO: Diagram!
 
@@ -598,7 +601,7 @@ The \textsf{Memcached} operations are performed using {\tt getMulti} to minimize
 All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
 The uncached objects are then cached for later use.
 
-\subsection{Caching HTML}
+\subsection{Caching HTML and Ad Hoc Queries}
 We also cache fragments of HTML because HTML generation can be fairly slow and unperforming.
 To help facilitate this, we implemented a few different caching functions for use in HTML templates.
 
@@ -637,7 +640,6 @@ This allows clients to gather data at the last moment possible because it may no
 Then for each of the resulting objects output buffering is started and the supplied rendering function is called with the object as an argument.
 Output buffering is then closed and the resulting HTML is stored in the cache and output to {\tt stdout}.
 
-\subsection{Caching Ad Hoc Queries}
 The same approach can be used for caching HTML and ad hoc queries.
 As long as the results of the query can only change when the ORM object's cache key changes, the cache entries will be invalidated as necessary.
 
@@ -647,7 +649,7 @@ As long as the results of the query can only change when the ORM object's cache 
 \begin{minted}{php}
 <?php
 $cacheKey = $guide->cacheKey() . "_steps";
-$steps = cacheGetAndSet($cacheKey, CACHE_FOREVER, function() use ($guide) {
+$steps = cacheGetAndSet($cacheKey, function() use ($guide) {
    return dbGet("
       SELECT *
       FROM steps
