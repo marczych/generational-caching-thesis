@@ -528,6 +528,7 @@ class Guide extends ORMObject {
 
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
+% TODO: Make this example more interesting/compelling.
 \begin{minted}{sql}
 SELECT *
 FROM steps
@@ -559,16 +560,15 @@ For guides, this value is the {\tt modified\_date} which is set to the current t
 For example, a {\tt Guide} could have cache keys {\tt Guide/1234-en-1368160868.395738} and {\tt Guide/1234-en-1368173958.773968} before and after it is modified, respectively.
 
 In most cases, the additional columns are not known before retrieving the object and must be retrieved before checking the cache.
-This is typically because the request URL only specifies the primary key because the {\tt modified\_date} isn't known externally.
+This is typically because the request URL only specifies the primary key and not any other additional information.
 To avoid hitting the database as much as possible, the entire database tuple that is used to generate the cache key is cached using its primary key.
 This cache entry is deleted anytime the object is saved.
 
 For example, only the {\tt guideid} and {\tt langid} are initially available when a guide request hits {\tt iFixit}'s servers.
-For a {\tt guideid} and {\tt langid} of {\tt 1234} and {\tt en}, respectively, the cache is checked for the {\tt Guide} object using {\tt Guide/1234-en} as the cache key.
+For a {\tt guideid} of {\tt 1234} and {\tt langid} of {\tt en}, the cache is checked for the {\tt Guide} object using {\tt Guide/1234-en} as the cache key.
 If it isn't found in the cache, it is retrieved from the database and stored in the cache.
 This object does not contain any data from other tables such as {\tt Steps}.
 The full cache key can then be constructed, {\tt Guide/1234-en-1368164354.918344} for example, and used to fetch the rest of the content.
-
 If it exists in the cache then it can be returned to the caller immediately.
 Otherwise, it must be retrieved from the database.
 Fortunately, the primary table tuple has already been fetched from the database so we only need to load the additional data for the object and store it in the cache.
@@ -589,8 +589,7 @@ Occasionally HTML fragments contain data that changes at different times than th
 That value could be incorporated into the cache key but it would fragment the cache into many different possibilities thus reducing its effectiveness.
 For example, {\tt Step}s' {\tt revisionids} are updated every time they are modified.
 However, the step number displayed to the user can be different for the same step on different guides because of the order of prerequisite guides.
-Rather than including the step number in the cache key, a placeholder value can be used in place of the step number.
-The placeholder is replaced with the actual step number before it is output to the user.
+Rather than including the step number in the cache key, a placeholder value is used in place of the step number which is replaced with the actual step number before it is output to the user.
 
 \begin{figure}[h]
 \begin{subfigure}[h]{0.5\textwidth}
@@ -698,8 +697,12 @@ A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 \begin{ssp}
 \begin{minted}{php}
 <? if (!cacheStart($guide, 'view-all', CACHE_FOREVER)): ?>
-   <? /* HTML generation */ ?>
-<? cacheEnd(); endif; ?>
+   <div class="guide">
+      <h3><?= $guide->title ?></h3>
+      <p>Difficulty: <?= $guide->difficulty ?></p>
+      <? /* Step HTML generation. */ ?>
+   </div>
+<? cacheEnd(); endif ?>
 \end{minted}
 \end{ssp}
 \caption{Example usage of cacheStart and cacheEnd.}
