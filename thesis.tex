@@ -634,15 +634,15 @@ This is especially true for fragments of HTML whose generation time is close to 
 
 {\tt batchCache} accepts a mapping of string cache key to any type of data.
 Much like {\tt cacheStart}, an additional string is supplied to differentiate these cache entries from others constructed from the same objects.
-A function supplied to {\tt batchCache} is called with an array of all the cache keys and data of the missed cache entries.
-This allows clients to gather data at the last moment possible because it may not be necessary to get some data at all if the HTML is cached.
-% TODO: Example use of this? Remove this?
-Then for each of the resulting objects output buffering is started and the supplied rendering function is called with the object as an argument.
-Output buffering is then closed and the resulting HTML is stored in the cache and output to {\tt stdout}.
+{\tt batchCache} calls \textsf{Memcached} {\tt getMulti} with the provided array of cache keys.
+For each cache miss, output buffering is started and the supplied rendering function is called with the data associated with the cache key.
+Output buffering is then closed and the resulting HTML is stored in the cache and added to the array of resulting HTML.
+Finally, every fragment of HTML is output to {\tt stdout} in the same order as they were provided.
+% TODO: Figure for batchCache.
 
-This approach can also be used for caching ad hoc query results.
-Figure ~\ref{fig:adHocQueryCaching} demonstrates caching an ad hoc query using {\tt cacheGetAndSet}.
-The cache key is constructed using the guide's full cache key and the string {\tt -steps}.
+The same approach can be applied to caching ad hoc query results.
+Figure ~\ref{fig:adHocQueryCaching} demonstrates this by using {\tt cacheGetAndSet}.
+The cache key is constructed using the guide's full cache key and the string {\tt -steps} so it will be invalidated when the guide is modified.
 If the value is not cached, {\tt cacheGetAndSet} calls the provided function and caches the result.
 
 \begin{figure}[h]
