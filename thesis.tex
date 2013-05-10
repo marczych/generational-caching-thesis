@@ -491,51 +491,51 @@ These typically are used in addition to the ORM to gather more complex data.
 
 \begin{figure}[hbtp]
 \begin{subfigure}[b]{1.0\textwidth}
-   \begin{ssp}
-   \begin{minted}{php}
-   <?php
-   class Guide extends ORMObject {
-      private $guideid;
-      private $langid;
-      private $title;
-      private $difficulty;
-      private $steps;
-   }
-   ?>
-   \end{minted}
-   \end{ssp}
-   \caption{ORM Object}
-   \label{fig:ormObject}
+\begin{ssp}
+\begin{minted}{php}
+<?php
+class Guide extends ORMObject {
+   private $guideid;
+   private $langid;
+   private $title;
+   private $difficulty;
+   private $steps;
+}
+?>
+\end{minted}
+\end{ssp}
+\caption{ORM Object}
+\label{fig:ormObject}
 \end{subfigure}
 
 \begin{subfigure}[b]{1.0\textwidth}
-   \begin{ssp}
-   \begin{minted}{php}
-   <div class="guide">
-      <h3><?= $guide->title ?></h3>
-      <p>Difficulty: <?= $guide->difficulty ?></p>
-      <? foreach ($guide->steps as $step): ?>
-         <div class="step">
-            <?= $step->title ?>
-         </div>
-      <? endforeach ?>
-   </div>
-   \end{minted}
-   \end{ssp}
-   \caption{HTML template}
-   \label{fig:htmlTemplate}
+\begin{ssp}
+\begin{minted}{php}
+<div class="guide">
+   <h3><?= $guide->title ?></h3>
+   <p>Difficulty: <?= $guide->difficulty ?></p>
+   <? foreach ($guide->steps as $step): ?>
+      <div class="step">
+         <?= $step->title ?>
+      </div>
+   <? endforeach ?>
+</div>
+\end{minted}
+\end{ssp}
+\caption{HTML template}
+\label{fig:htmlTemplate}
 \end{subfigure}
 
 \begin{subfigure}[b]{1.0\textwidth}
-   \begin{ssp}
-   \begin{minted}{sql}
-   SELECT *
-   FROM steps
-   WHERE guideid = ? AND langid = ?
-   \end{minted}
-   \end{ssp}
-   \caption{Ad hoc query}
-   \label{fig:adHocQuery}
+\begin{ssp}
+\begin{minted}{sql}
+SELECT *
+FROM steps
+WHERE guideid = ? AND langid = ?
+\end{minted}
+\end{ssp}
+\caption{Ad hoc query}
+\label{fig:adHocQuery}
 \end{subfigure}
 
 \caption{Data types being cached}
