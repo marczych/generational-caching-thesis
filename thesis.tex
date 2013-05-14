@@ -89,6 +89,7 @@ However, the caching strategy used is a very ad hoc one and therefore can be gre
 In this thesis we investigate caching strategies and find that generational caching fits \textsf{iFixit}'s needs best.
 We then describe the process of implementing generational caching in \textsf{iFixit}'s web site, report problems encountered, and provide before and after statistics.
 \end{abstract}
+% TODO: Clean up abstract.
 
 
 \tableofcontents
@@ -158,20 +159,20 @@ Consequently, all of the content is stored in a database that must be queried in
 To reduce server load and decrease response time, \textsf{iFixit} uses \textsf{Memcached}, an open-source in-memory caching system \cite{memcachedDotOrg}, to cache the results of expensive operations.
 However, since the caching strategy used is an ad hoc one, the effectiveness of the cache can be greatly improved by using a different caching technique.
 
-% TODO: Work on transition.
+This thesis investigates web application caching techniques in the context of \textsf{iFixit}.
+We focus on reducing page response time and server load by caching the results of database queries and HTML rendering.
 
-Rough list of topics to touch on:
+Our work makes the following contributions:
 
-Explain process of implementation in a production web site with a somewhat legacy code base.
+\begin{enumerate}
+   \item A survey of existing caching solutions applicable to web applications.
+   \item An in-depth description of implementing an adapted caching solution in \textsf{iFixit}'s code base.
+   % TODO: Include this? -- \item Provide a better understanding of when different caching strategies apply to certain situations, types of data, and access patterns.
+   \item A performance comparison and analysis of experiments using real-world traffic.
+\end{enumerate}
 
-In depth explanation of technical details and challenges overcome.
-
-Better understanding of when different caching strategies apply to certain situations, types of data, and access patterns.
-
-Before and after performance comparison.
-
-The rest of this thesis is organized as follows...
-
+The rest of this thesis is organized as follows.
+Chapter \ref{background} provides background on caching and outlines related work, chapter \ref{designAndImplementation} describes the design and implementation of the caching system implemented in \textsf{iFixit}'s code base, chapter \ref{validation} validates our work, and chapter \ref{conclusions} concludes.
 
 \chapter{Background}
 \label{background}
@@ -709,7 +710,7 @@ A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
 <? cacheEnd(); endif ?>
 \end{minted}
 \end{ssp}
-\caption{Example usage of cacheStart and cacheEnd.}
+\caption{Example usage of cacheStart and cacheEnd}
 \label{fig:cacheStartExample}
 \end{figure}
 
@@ -740,7 +741,7 @@ This is demonstrated for {\tt Step}s in Figure ~\ref{fig:batchCacheStep}, which 
 </div>
 \end{minted}
 \end{ssp}
-\caption{Example usage of batchCache for Steps.}
+\caption{Example usage of batchCache for Steps}
 \label{fig:batchCacheStep}
 \end{figure}
 
@@ -841,7 +842,7 @@ Both of these should cause a decrease in total database query time.
 
 
 \chapter{Conclusions and Future Work}
-\label{introduction}
+\label{conclusions}
 
 % TODO: Write.
 
