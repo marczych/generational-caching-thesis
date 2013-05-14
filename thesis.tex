@@ -81,15 +81,21 @@
 
 \begin{abstract}
 Web site scaling has been an issue since the inception of the web.
-The demand for user generated content and personalized web pages leads to storing all information in a database on the web server.
+The demand for user generated content and personalized web pages leads to storing all content in a database on the web server.
 Unfortunately, scaling the database to handle large amounts of traffic is still a problem many companies face.
-One such company is \textsf{iFixit}, a provider of free, publicly-editable repair manuals.
-Like many other websites, \textsf{iFixit} uses \textsf{Memcached} for caching to decrease database load and improve response time.
+One such company is \textsf{iFixit}, a provider of free, publicly-editable, online repair manuals.
+Like many websites, \textsf{iFixit} uses \textsf{Memcached} to decrease database load and improve response time.
 However, the caching strategy used is a very ad hoc one and therefore can be greatly improved.
-In this thesis we investigate caching strategies and find that generational caching fits \textsf{iFixit}'s needs best.
-We then describe the process of implementing generational caching in \textsf{iFixit}'s web site, report problems encountered, and provide before and after statistics.
+
+Most research regarding web application caching focuses on cache invalidation, the process of keeping cached content consistent with the permanent data store.
+Generational caching is a technique that involves including the object's last modified date in the cache key.
+This ensures that cache keys change whenever the object is modified, which effectively invalidates all relevant cache entries.
+Fine-grained caching is now very simple because the developer doesn't need to explicitly delete all possible cache keys that might need to be invalidated when an object is modified.
+This is particularly useful for caching arbitrary fragments of HTML without increasing the complexity of cache invalidation.
+
+We describe the process of implementing a caching strategy based on generational caching concepts in \textsf{iFixit}'s web site.
+The results of our implementation show roughly X\% decrease in page response time and insert any other results here.
 \end{abstract}
-% TODO: Clean up abstract.
 
 
 \tableofcontents
