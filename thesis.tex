@@ -391,8 +391,7 @@ The timestamp is updated every time the object is modified thus invalidating all
 This approach also updates the timestamps of any objects that depend on the modified object.
 Generational caching makes fine-grained caching trivial because it isn't necessary to enumerate all potential cache keys.
 Cache entries can be defined arbitrarily and as long as the cache key contains the timestamp it will be invalidated when the underlying object is updated.
-% TODO: Brief background on 37Signals.
-This technique is employed by \textsf{37Signals} and various other websites \cite{keyBasedCacheExpiration}.
+This technique is employed by \textsf{37Signals}, a SaaS that provides project management tools and origin of the popular web application framework Ruby on Rails\cite{37SignalsDotCom}, and various other websites \cite{keyBasedCacheExpiration}.
 
 One downside to this method is the amount of cache garbage that is generated because cache entries are never deleted.
 However, this isn't much of an issue because most caching technologies use an LRU eviction policy so unused cache entries are eventually deleted when the cache fills up.
