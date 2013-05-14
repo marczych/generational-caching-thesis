@@ -173,6 +173,7 @@ Our work makes the following contributions:
 \begin{enumerate}
    \item A survey of existing caching solutions applicable to web applications.
    \item An in-depth description of implementing an adapted caching solution in \textsf{iFixit}'s code base.
+   % TODO: Specify generational caching here? And maybe provide background on what it is before this?
    % TODO: Include this? -- \item Provide a better understanding of when different caching strategies apply to certain situations, types of data, and access patterns.
    \item A performance comparison and analysis of experiments using real-world traffic.
 \end{enumerate}
@@ -284,9 +285,10 @@ In addition to their main website, \textsf{iFixit} runs \textsf{Dozuki}, a Softw
 The same code base powers both \textsf{iFixit} and \textsf{Dozuki} which means that we are only interested in performance improvements to both platforms.
 In particular, the general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
 
-% TODO: Add evidence to this. Reference another section?
 The primary bottleneck is the database machine because it has to retrieve data for every incoming HTTP request.
 On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
+Sharding the data between multiple database machines to distribute the load is a common solution.
+However, consistency and race conditions become major issues that must be addressed.
 
 \subsection{Web Architecture}
 In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure ~\ref{fig:iFixitArchitecture}, at the time of this writing.
