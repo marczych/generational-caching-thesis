@@ -115,10 +115,7 @@ The results of our implementation show roughly X\% decrease in page response tim
 \renewcommand{\baselinestretch}{1.66}
 
 
-\chapter{Introduction}
-\label{introduction}
-
-\section{Motivation}
+\chapter{Introduction} \label{introduction}
 Web scalability has been an issue for web sites since the dot-com boom of the late nineties \cite{webServerScaling}.
 All moderately sized websites experience web server issues as their breadth of content as well as the number of active users grow.
 If not properly addressed, the website's performance suffers.
@@ -181,9 +178,8 @@ Our work makes the following contributions:
 The rest of this thesis is organized as follows.
 Chapter \ref{background} provides background on caching and outlines related work, chapter \ref{designAndImplementation} describes the design and implementation of the caching system implemented in \textsf{iFixit}'s code base, chapter \ref{validation} validates our work, and chapter \ref{conclusions} concludes.
 
-\chapter{Background}
-\label{background}
 
+\chapter{Background} \label{background}
 \section{Terminology}
 At a high level, a cache is used to store results of operations so future requests can be processed faster.
 A cache is typically not the primary storage location for data.
@@ -467,8 +463,7 @@ The client library performs consistent hashing\cite{consistentHashing} on any ke
 The result is that adding and removing servers doesn't drastically impact hit rate because the majority of keys map to the same servers before and after the change.
 
 
-\chapter{Design and Implementation}
-\label{designAndImplementation}
+\chapter{Design and Implementation} \label{designAndImplementation}
 In this chapter, we explain in depth the caching solution we implemented for \textsf{iFixit} and analyze in Chapter X.
 But first, we must reiterate \textsf{iFixit}'s requirements for such a caching solution.
 
@@ -778,9 +773,7 @@ $steps = cacheGetAndSet($cacheKey, function() use ($guide) {
 \end{figure}
 
 
-\chapter{Validation}
-\label{validation}
-
+\chapter{Validation} \label{validation}
 Validation is a fairly straightforward process.
 The basic approach involves gathering various statistics with and without our caching strategy during an experiment based on a repeatable and representative set of input data.
 
@@ -849,8 +842,7 @@ Both of these should cause a decrease in total database query time.
 % TODO: Analyze results. Draw conclusions. Explain stuff.
 
 
-\chapter{Conclusions and Future Work}
-\label{conclusions}
+\chapter{Conclusions and Future Work} \label{conclusions}
 
 % TODO: Write.
 
