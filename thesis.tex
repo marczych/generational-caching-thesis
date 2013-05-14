@@ -151,14 +151,15 @@ Because of this, server load becomes a real issue especially for the database ma
 \label{fig:iFixitHomePage}
 \end{figure}
 
-One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom}.
+One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom} (Figure ~\ref{fig:iFixitHomePage}).
 \textsf{iFixit}'s step-by-step guides and question-and-answer platform are driven largely by user-generated content.
 All repair guides on \textsf{iFixit} are publicly editable and contain rich revision history.
 Consequently, all of the content is stored in a database that must be queried in order to respond to requests for data.
-To reduce server load and decrease response time, \textsf{iFixit} uses \textsf{Memcached} to cache the results of expensive operations.
+To reduce server load and decrease response time, \textsf{iFixit} uses \textsf{Memcached}, an open-source in-memory caching system \cite{memcachedDotOrg}, to cache the results of expensive operations.
 However, since the caching strategy used is an ad hoc one, the effectiveness of the cache can be greatly improved by using a different caching technique.
 
-\section{Main Contributions}
+% TODO: Work on transition.
+
 Rough list of topics to touch on:
 
 Explain process of implementation in a production web site with a somewhat legacy code base.
@@ -273,9 +274,10 @@ These events attract thousands of visitors to the site in a short period of time
 Because of this, the website must be able to handle a read-heavy workload while simultaneously writing to the same data.
 
 In addition to their main website, \textsf{iFixit} runs \textsf{Dozuki}, a Software as a Service (SaaS) business that provides technical documentation to anyone who needs step-by-step instructions.
-The same code base powers both \textsf{iFixit} and \textsf{Dozuki} which means that we are only interested performance improvements to both platforms.
+The same code base powers both \textsf{iFixit} and \textsf{Dozuki} which means that we are only interested in performance improvements to both platforms.
 In particular, the general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
 
+% TODO: Add evidence to this. Reference another section?
 The primary bottleneck is the database machine because it has to retrieve data for every incoming HTTP request.
 On the contrary, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
 
@@ -289,6 +291,7 @@ However, this machine is used purely as a backup and is not used to improve perf
 
 All of this is built using Amazon Web Services (AWS) including Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront, a Content Delivery Network (CDN), for serving content out of S3, and Elastic Block Store (EBS) for raw block storage on each server instance.
 
+% TODO: Add HTTP request coming in and slave DB.
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{assets/iFixitArchitecture.png}
@@ -300,7 +303,7 @@ All of this is built using Amazon Web Services (AWS) including Elastic Cloud Com
 \subsection{iFixit's Current Caching Strategy}
 \textsf{iFixit} currently has a very ad hoc approach to caching.
 Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
-If the object is not in the cache, then it is generated like normal and stored in the cache for later use.
+If the object is not in the cache, it is retrieved from the database and stored in the cache for later use.
 The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
 \textsf{iFixit} uses two strategies for cache invalidation that are described below.
 
@@ -324,7 +327,7 @@ This is especially true for fragments of HTML because the cache entries are typi
 In general, the difficulty of cache invalidation for any given datum is proportional to the number of cache entries dependent on that datum and how fine-grained those cache entries are.
 As a result, \textsf{iFixit} doesn't currently cache any HTML fragments.
 
-My caching strategy aims to solve these two problems by providing a means for caching HTML and making cache invalidation happen automatically when the underlying data has changed.
+Our caching strategy aims to solve these two problems by providing a means for caching HTML and making cache invalidation happen automatically when the underlying data has changed.
 
 \section{Related Work}
 \subsection{Research Challenges}
@@ -345,7 +348,7 @@ This leaves the developer to write application-specific code instead of caching 
 \subsubsection{Caching Technologies}
 Most web application caching research revolves around caching strategies.
 It turns out that the underlying cache daemon is largely irrelevant.
-\textsf{Memcached} is an example of a dynamic cache daemon which is well-suite for dynamic websites.
+\textsf{Memcached} is an example of a dynamic cache daemon which is well-suited for dynamic websites.
 It is by far the most popular web caching system; it is currently in use by \textsf{Facebook}, \textsf{Wikipedia}, \textsf{YouTube}, and countless others \cite{memcachedDotOrg}.
 
 Search engines use static caches as well because a large number of search queries return the same data for long periods of time.
@@ -384,6 +387,7 @@ The timestamp is updated every time the object is modified thus invalidating all
 This approach also updates the timestamps of any objects that depend on the modified object.
 Generational caching makes fine-grained caching trivial because it isn't necessary to enumerate all potential cache keys.
 Cache entries can be defined arbitrarily and as long as the cache key contains the timestamp it will be invalidated when the underlying object is updated.
+% TODO: Brief background on 37Signals.
 This technique is employed by \textsf{37Signals} and various other websites \cite{keyBasedCacheExpiration}.
 
 One downside to this method is the amount of cache garbage that is generated because cache entries are never deleted.
@@ -420,7 +424,7 @@ However, Cambazoglu, Junqueira, and Plachouras claim that the eviction policy do
 
 
 \section{Memcached}
-In the words of its creators, \begin{quotation}``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering.\cite{memcachedDotOrg}''\end{quotation}
+In the words of its creators, \begin{quotation}``Memcached is an in-memory key-value store for small chunks of arbitrary data (strings, objects) from results of database calls, API calls, or page rendering\cite{memcachedDotOrg}.''\end{quotation}
 There are two main operations in \textsf{Memcached}: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
 For example, {\tt users-1234} could be used to identify the {\tt User} object with {\tt userid} of {\tt 1234}.
@@ -435,7 +439,7 @@ The expire time the data was set with determines the maximum lifespan of the cac
 Once the data has expired it is no longer returned for {\tt get} requests although the data is not immediately removed from memory.
 Before data has expired, however, items can be evicted due to memory pressure.
 This occurs when new items are being added to the cache and there isn't any room.
-Expired items are evicted first if any are found otherwise the Least Recently Used (LRU) policy is used to select a cache entry to evict.
+Expired items are evicted first if any are found, otherwise the Least Recently Used (LRU) policy is used to select a cache entry to evict.
 In other words, the cache entry that has last been referenced the longest ago is evicted.
 Finally, cache entries can also be removed by performing {\tt delete} requests and providing the key that identifies the data to be deleted.
 
@@ -461,11 +465,11 @@ In this chapter, we explain in depth the caching solution we implemented for \te
 But first, we must reiterate \textsf{iFixit}'s requirements for such a caching solution.
 
 \begin{description}
-   \item[R1] It must be largely transparent to the developer.
+   \item[R1] The caching strategy must be largely transparent to the developer.
              The developer should only be required to determine what data to cache, not how to cache it and how to invalidate it.
-   \item[R2] It must allow for finer-grained caching without added complexity.
-   \item[R3] It must provide a means of caching and invalidating fragments of HTML.
-   \item[R4] It must result in increased performance in regards to response time and database load.
+   \item[R2] The caching strategy must allow for finer-grained caching without added complexity.
+   \item[R3] The caching strategy must provide a means of caching and invalidating fragments of HTML.
+   \item[R4] The caching strategy must result in increased performance in regards to response time and database load.
 \end{description}
 
 The rest of this chapter is organized as follows.
@@ -474,9 +478,9 @@ In section 3.2 we go over the details of implementing the design in \textsf{iFix
 
 \section{Design}
 Out of existing solutions, generational caching most closely meets these requirements.
-This is because the cache key changes whenever the underlying data changes so cache entries no longer need to be invalidated.
-This allows there to be a large number of cache entries that depend on a single piece of data and the values will not need to be invalidated.
-For these reasons, we will use generational caching concepts as a starting point for our caching solution.
+This is because the cache key changes whenever the underlying data changes, so cache entries no longer need to be invalidated.
+This allows there to be many cache entries that depend on a single piece of data and the values will not need to be invalidated.
+For these reasons, we used generational caching concepts as a starting point for our caching solution.
 
 \subsection{What is being cached}
 This section describes the three primary types of data that are cached in our caching strategy.
@@ -547,6 +551,7 @@ WHERE guideid = ? AND langid = ?
 We will first discuss how we incorporate caching into our ORM and how it is used for \textsf{iFixit}'s guides.
 The guide and step ORM objects can be found in Figure ~\ref{fig:cachingExample}.
 
+% TODO: Explain what the primary key is.
 The primary key uniquely identifies a tuple in the database and can be used with the ORM to select a single record.
 Once the record is loaded, other data not contained in the primary table is loaded and then the entire object is cached.
 For guides, the {\tt Guide} object is retrieved from the DB and then the {\tt Step} objects are loaded afterwards.
@@ -568,7 +573,7 @@ For example, only the {\tt guideid} and {\tt langid} are initially available whe
 For a {\tt guideid} of {\tt 1234} and {\tt langid} of {\tt en}, the cache is checked for the {\tt Guide} object using {\tt Guide/1234-en} as the cache key.
 If it isn't found in the cache, it is retrieved from the database and stored in the cache.
 This object does not contain any data from other tables such as {\tt Steps}.
-The full cache key can then be constructed, {\tt Guide/1234-en-1368164354.918344} for example, and used to fetch the rest of the content.
+The full cache key can then be constructed, for example {\tt Guide/1234-en-1368164354.918344}, and used to fetch the rest of the content.
 If it exists in the cache then it can be returned to the caller immediately.
 Otherwise, it must be retrieved from the database.
 Fortunately, the primary table tuple has already been fetched from the database so we only need to load the additional data for the object and store it in the cache.
@@ -589,7 +594,7 @@ Occasionally HTML fragments contain data that changes at different times than th
 That value could be incorporated into the cache key but it would fragment the cache into many different possibilities thus reducing its effectiveness.
 For example, {\tt Step}s' {\tt revisionids} are updated every time they are modified.
 However, the step number displayed to the user can be different for the same step on different guides because of the order of prerequisite guides.
-Rather than including the step number in the cache key, a placeholder value is used in place of the step number which is replaced with the actual step number before it is output to the user.
+Rather than including the step number in the cache key, a placeholder value is used in place of the step number, which is replaced with the actual step number before it is output to the user.
 
 \begin{figure}[h]
 \begin{subfigure}[h]{0.5\textwidth}
@@ -669,7 +674,7 @@ Any objects that were not cached are retrieved from the database using {\tt find
 
 We allow classes derived from the ORM to specify which columns in addition to the primary key to include in the cache key.
 More data must be retrieved from the database to construct the cache key if only the primary keys are provided to {\tt findAllCached} and the derived class specifies additional cache key columns.
-Fortunately we already have a method, {\tt findAllBykey}, that retrieves objects based on their primary key that can be used to retrieve more data.
+Fortunately, we already have a method, {\tt findAllByKey}, that retrieves objects based on their primary key that can be used to retrieve more data.
 However, we can do one better and cache that operation by using {\tt findAllCached} instead.
 For this call, a flag is passed to {\tt findAllCached} that indicates that only the primary table should be loaded.
 Otherwise, all other meta data would be loaded which is exactly what the first {\tt findAllCached} does.
@@ -720,7 +725,9 @@ This is especially true for fragments of HTML whose generation time is close to 
 For each cache miss, output buffering is started and the supplied rendering function is called with the ORM object.
 Output buffering is then closed and the resulting HTML is stored in the cache and added to the array of resulting HTML.
 Finally, every fragment of HTML is output to {\tt stdout} in the same order as they were provided.
-This is demonstrated for {\tt Step}s in Figure ~\ref{fig:batchCacheStep} which is the cached steps version of Figure ~\ref{fig:htmlTemplate}.
+This is demonstrated for {\tt Step}s in Figure ~\ref{fig:batchCacheStep}, which is the cached steps version of Figure ~\ref{fig:htmlTemplate}.
+
+% TODO: Pseudocode for batchCache.
 
 \begin{figure}[h]
 \begin{ssp}
@@ -766,8 +773,8 @@ $steps = cacheGetAndSet($cacheKey, function() use ($guide) {
 \chapter{Validation}
 \label{validation}
 
-Validating my work is a fairly straightforward process.
-The basic approach will involve gathering various statistics with and without my caching strategy during an experiment based on a repeatable and representative set of input data.
+Validation is a fairly straightforward process.
+The basic approach involves gathering various statistics with and without our caching strategy during an experiment based on a repeatable and representative set of input data.
 
 \section{Experimental Setup}
 We recorded requests to \textsf{www.iFixit.com} for a full week and selected two 24-hour sets of representative data to use as input to the experiments.
@@ -785,6 +792,7 @@ This machine runs \textsf{Memcached} {\tt 1.4.15} which is used by the applicati
 The database machine is a {\tt m1.xlarge} instance with 15 GiB of memory and 8 EC2 Compute Units (4 virtual cores with 2 EC2 Compute Units each).
 The application machines are {\tt c1.medium} instances with 1.7 GiB of memory and 5 EC2 Compute Units (2 virtual cores with 2.5 EC2 Compute Units each).
 More information regarding EC2 specs can be found on AWS's website \cite{awsInstanceTypes}.
+% TODO: Show picture.
 
 We then replay the requests in the test sets with and without our caching strategy for a total of 4 runs.
 Requests are performed using a NodeJS script running on the load balancer to reduce latency between the simulated client and the web servers.
@@ -792,31 +800,43 @@ Every request is profiled server-side --- \textsf{Memcached}, \textsf{MySQL}, an
 
 Before each experiment is run, the database is restored to the state it was in when the requests were originally made to \textsf{www.iFixit.com}.
 This ensures that the data is the same between runs and all views and edits are working with the same data.
-The stats logging table is truncated so only requests during the experiment will be in the table when the test is complete.
-Finally, \textsf{Memcached} is restarted which empties its contents.
+The stats logging table is truncated, so only requests during the experiment are in the table when the test is complete.
+Finally, \textsf{Memcached} is restarted, which empties its contents.
 
 The experiment is then run for the full 24 hours.
 Afterwards, the stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
 
 \section{Measured Values}
-The most general value we will compare is page response time, the total amount of time the request spent on our servers.
+The most general value we compare is \textit{page response time}, the total amount of time the request spent on our servers.
 Response time should decrease because more data is cached and can be returned faster than before.
-Similarly, HTML generation time should decrease because fragments of HTML are now being cached.
+Similarly, \textit{HTML generation time} should decrease because fragments of HTML are now being cached.
 
-The interesting values for \textsf{Memcached} stats are {\tt get} count, hit rate, and time spent in cache calls.
-The {\tt get} count will likely increase because cache entries are finer-grained.
+The interesting values for \textsf{Memcached} stats are \textit{get count}, \textit{hit rate}, and \textit{time spent in cache calls}.
+The get count will likely increase because cache entries are finer-grained.
 Cache hit rate will vary drastically because pages with uncached content will have a large number of misses while pages with cached content will have a large number of hits.
 In general, cache hit rate should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
 Time spent in \textsf{Memcached} calls will likely increase because more content is being cached.
 
-Finally, the interesting values for \textsf{MySQL} are query count and total query time.
+Finally, the interesting values for \textsf{MySQL} are \textit{query count} and \textit{total query time}.
 Query count should go down because the cache should serve more requests that previously were handled by the database.
 Additionally, more content is retrieved in batch so there are fewer queries which reduces network overhead.
 Both of these should cause a decrease in total database query time.
 
+\section{Hypothesis}
+% TODO: Write.
+
+\section{Results}
+% TODO: Write. Pretty much a raw data dump of stuff.
+
+\section{Analysis}
+% TODO: Analyze results. Draw conclusions. Explain stuff.
+
+\chapter{Conclusions and Future Work}
+\label{introduction}
+
+% TODO: Write.
 
 \section{Future Work Ideas}
-\label{futureWork}
 How size of cache affects hit rate over long periods of time to evaluate if it's okay to not invalidate anything.
 
 
