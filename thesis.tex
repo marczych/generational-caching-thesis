@@ -820,13 +820,14 @@ Similarly, \textit{HTML generation time} should decrease because fragments of HT
 
 The interesting values for \textsf{Memcached} stats are \textit{get count}, \textit{hit rate}, and \textit{time spent in cache calls}.
 The get count will likely increase because cache entries are finer-grained.
-Cache hit rate will vary drastically because pages with uncached content will have a large number of misses while pages with cached content will have a large number of hits.
+Cache hit rate will vary drastically because pages with uncached content will have a large number of misses.
+However, pages with cached content will have either a few cache hits for a large amount of content or many cache hits for finer-grained content.
 In general, cache hit rate should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
 Time spent in \textsf{Memcached} calls will likely increase because more content is being cached.
 
 Finally, the interesting values for \textsf{MySQL} are \textit{query count} and \textit{total query time}.
 Query count should go down because the cache should serve more requests that previously were handled by the database.
-Additionally, more content is retrieved in batch so there are fewer queries which reduces network overhead.
+Additionally, network overhead is reduuced because more content is retrieved in batch using fewer queries.
 Both of these should cause a decrease in total database query time.
 
 \section{Hypothesis}
@@ -837,6 +838,7 @@ Both of these should cause a decrease in total database query time.
 
 \section{Analysis}
 % TODO: Analyze results. Draw conclusions. Explain stuff.
+
 
 \chapter{Conclusions and Future Work}
 \label{introduction}
