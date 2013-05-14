@@ -783,15 +783,23 @@ The second data set is traffic during \textsf{iFixit}'s Samsung Galaxy S4 Teardo
 Since our caching strategy was only applied to guides, the request logs are filtered to only include requests viewing or modifying guides.
 Otherwise, the results would be affected by other non-guide requests which are not using our generational caching method.
 
-The test environment is an isolated clone of \textsf{iFixit}'s production architecture consisting of a load balancer, two application machines, and a database machine.
+The test environment, depicted in Figure ~\ref{fig:experimentalArchitecture}, is an isolated clone of \textsf{iFixit}'s production architecture consisting of a load balancer, two application machines, and a database machine.
 Since the traffic replays are a subset of \textsf{iFixit}'s traffic, two application machines is more than enough to handle the load.
 All machines are AWS EC2 nodes running 64-bit CentOS 5.4.
 The load balancer is a {\tt m1.large} instance with 7.5 GiB memory and 4 EC2 Compute Units (2 virtual cores with 2 EC2 Compute Units each).
 This machine runs \textsf{Memcached} {\tt 1.4.15} which is used by the application machines.
 The database machine is a {\tt m1.xlarge} instance with 15 GiB of memory and 8 EC2 Compute Units (4 virtual cores with 2 EC2 Compute Units each).
+% TODO: Version of MySQL?
 The application machines are {\tt c1.medium} instances with 1.7 GiB of memory and 5 EC2 Compute Units (2 virtual cores with 2.5 EC2 Compute Units each).
 More information regarding EC2 specs can be found on AWS's website \cite{awsInstanceTypes}.
-% TODO: Show picture.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{assets/experimentalArchitecture.png}
+\caption{Experimental Setup}
+\label{fig:experimentalArchitecture}
+\end{figure}
+
 
 We then replay the requests in the test sets with and without our caching strategy for a total of 4 runs.
 Requests are performed using a NodeJS script running on the load balancer to reduce latency between the simulated client and the web servers.
