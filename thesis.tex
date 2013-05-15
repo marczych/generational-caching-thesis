@@ -155,7 +155,7 @@ Because of this, server load becomes a real issue especially for the database ma
 \label{fig:iFixitHomePage}
 \end{figure}
 
-One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom} (Figure ~\ref{fig:iFixitHomePage}).
+One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom} (Figure \ref{fig:iFixitHomePage}).
 \textsf{iFixit}'s step-by-step guides and question-and-answer platform are driven largely by user-generated content.
 All repair guides on \textsf{iFixit} are publicly editable and contain rich revision history.
 Consequently, all of the content is stored in a database that must be queried in order to respond to requests for data.
@@ -223,7 +223,7 @@ The ActiveRecord pattern is a common technique used in web applications to inter
 In the host language, the developer creates classes that represent tables in the database.
 This becomes an object-relational mapping (ORM) in that the properties of the class represent columns in the database.
 Rows can be inserted, updated, and removed by calling the {\tt insert}, {\tt update}, {\tt delete} methods on the object, respectively.
-This is demonstrated in Figure ~\ref{fig:activeRecordExample}.
+This is demonstrated in Figure \ref{fig:activeRecordExample}.
 
 \begin{figure}[h]
 \begin{ssp}
@@ -257,7 +257,7 @@ This {\tt User} can later be retrieved by calling {\tt find}.
 \section{iFixit}
 
 \subsection{Data and Site Usage}
-\textsf{iFixit}'s most popular content is their step-by-step repair guides which can be seen in Figure ~\ref{fig:iFixitGuideExample}.
+\textsf{iFixit}'s most popular content is their step-by-step repair guides which can be seen in Figure \ref{fig:iFixitGuideExample}.
 An \textsf{iFixit} guide consists of an ordered list of steps as well as meta data about the guide such as title, summary, parts, and tools.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
 To avoid duplicating content, guides can also be included in other guides as prerequisites.
@@ -290,7 +290,7 @@ Sharding the data between multiple database machines to distribute the load is a
 However, consistency and race conditions become major issues that must be addressed.
 
 \subsection{Web Architecture}
-In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure ~\ref{fig:iFixitArchitecture}, at the time of this writing.
+In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure \ref{fig:iFixitArchitecture}, at the time of this writing.
 All of \textsf{iFixit}'s traffic is first directed to a load balancer which selects an application machine to handle the request.
 At any given time there are four to eight application machines that run \textsf{iFixit}'s core software which is written in PHP.
 They get all of their data from one master database machine running the Percona build of \textsf{MySQL} which handles all reads and writes.
@@ -489,11 +489,11 @@ For these reasons, we used generational caching concepts as a starting point for
 
 \subsection{What is being cached}
 This section describes the three primary types of data that are cached in our caching strategy.
-The first data type are objects constructed from query results that represent a tuple in the database (see Figure ~\ref{fig:ormObject}).
+The first data type are objects constructed from query results that represent a tuple in the database (see Figure \ref{fig:ormObject}).
 These are used as an ORM which can make modifications to the database as well as retrieve data for consumption.
-The second data type are fragments of HTML generated in templates like the one depicted in Figure ~\ref{fig:htmlTemplate}.
+The second data type are fragments of HTML generated in templates like the one depicted in Figure \ref{fig:htmlTemplate}.
 These typically produce output based on data retrieved from the database and need to be invalidated anytime that data has changed.
-Finally, results of ad hoc queries, like the one in Figure ~\ref{fig:adHocQuery}, are also cached.
+Finally, results of ad hoc queries, like the one in Figure \ref{fig:adHocQuery}, are also cached.
 These typically are used in addition to the ORM to gather more complex data.
 
 \begin{figure}[hbtp]
@@ -553,7 +553,7 @@ WHERE prereq_guideid = ? AND prereq_langid = ?
 
 \subsection{Caching Approach}
 We will first discuss how we incorporate caching into our ORM and how it is used for \textsf{iFixit}'s guides.
-The guide and step ORM objects can be found in Figure ~\ref{fig:cachingExample}.
+The guide and step ORM objects can be found in Figure \ref{fig:cachingExample}.
 
 The primary key of a database table can be used with the ORM to select a single record.
 Once the record is loaded, other data not contained in the primary table is loaded and then the entire object is cached.
@@ -699,7 +699,7 @@ If the HTML was found in the cache it is output to {\tt stdout} and {\tt cacheSt
 Otherwise output buffering is started to capture the HTML that is generated when running the template code and {\tt cacheStart} returns {\tt false}.
 A call to {\tt cacheEnd} signals the end of the cached HTML section.
 This function closes output buffering, gets the contents of the buffer, caches it, and finally outputs the HTML to {\tt stdout}.
-A basic example is shown in Figure ~\ref{fig:cacheStartExample}.
+A basic example is shown in Figure \ref{fig:cacheStartExample}.
 
 \begin{figure}[h]
 \begin{ssp}
@@ -728,7 +728,7 @@ This is especially true for fragments of HTML whose generation time is close to 
 For each cache miss, output buffering is started and the supplied rendering function is called with the ORM object.
 Output buffering is then closed and the resulting HTML is stored in the cache and added to the array of resulting HTML.
 Finally, every fragment of HTML is output to {\tt stdout} in the same order as they were provided.
-This is demonstrated for {\tt Step}s in Figure ~\ref{fig:batchCacheStep}, which is the cached steps version of Figure ~\ref{fig:htmlTemplate}.
+This is demonstrated for {\tt Step}s in Figure \ref{fig:batchCacheStep}, which is the cached steps version of Figure \ref{fig:htmlTemplate}.
 
 % TODO: Pseudocode for batchCache.
 
@@ -749,7 +749,7 @@ This is demonstrated for {\tt Step}s in Figure ~\ref{fig:batchCacheStep}, which 
 \end{figure}
 
 The same approach can be applied to caching ad hoc query results.
-Figure ~\ref{fig:adHocQueryCaching} demonstrates this by using {\tt cacheGetAndSet}.
+Figure \ref{fig:adHocQueryCaching} demonstrates this by using {\tt cacheGetAndSet}.
 The cache key is constructed using the guide's full cache key and the string {\tt -steps} so it will be invalidated when the guide is modified.
 If the value is not cached, {\tt cacheGetAndSet} calls the provided function and caches the result.
 
@@ -785,7 +785,7 @@ The second data set is traffic during \textsf{iFixit}'s Samsung Galaxy S4 Teardo
 Since our caching strategy was only applied to guides, the request logs are filtered to only include requests viewing or modifying guides.
 Otherwise, the results would be affected by other non-guide requests which are not using our generational caching method.
 
-The test environment, depicted in Figure ~\ref{fig:experimentalArchitecture}, is an isolated clone of \textsf{iFixit}'s production architecture consisting of a load balancer, two application machines, and a database machine.
+The test environment, depicted in Figure \ref{fig:experimentalArchitecture}, is an isolated clone of \textsf{iFixit}'s production architecture consisting of a load balancer, two application machines, and a database machine.
 Since the traffic replays are a subset of \textsf{iFixit}'s traffic, two application machines is more than enough to handle the load.
 All machines are AWS EC2 nodes running 64-bit CentOS 5.4.
 The load balancer is a {\tt m1.large} instance with 7.5 GiB memory and 4 EC2 Compute Units (2 virtual cores with 2 EC2 Compute Units each).
