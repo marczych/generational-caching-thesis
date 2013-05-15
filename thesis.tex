@@ -534,11 +534,10 @@ class Guide extends ORMObject {
 
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
-% TODO: Make this example more interesting/compelling.
 \begin{minted}{sql}
-SELECT *
-FROM steps
-WHERE guideid = ? AND langid = ?
+SELECT guideid, langid
+FROM guide_prereqs
+WHERE prereq_guideid = ? AND prereq_langid = ?
 \end{minted}
 \end{ssp}
 \caption{Ad hoc query}
@@ -757,11 +756,11 @@ If the value is not cached, {\tt cacheGetAndSet} calls the provided function and
 \begin{minted}{php}
 <?php
 $cacheKey = $guide->cacheKey() . "-steps";
-$steps = cacheGetAndSet($cacheKey, function() use ($guide) {
+$prereqs = cacheGetAndSet($cacheKey, function() use ($guide) {
    return dbQuery("
-      SELECT *
-      FROM steps
-      WHERE guideid = ? AND langid = ?",
+      SELECT guideid, langid
+      FROM guide_prereqs
+      WHERE prereq_guideid = ? AND prereq_langid = ?",
     [$guide->guideid, $guide->langid]);
 });
 ?>
