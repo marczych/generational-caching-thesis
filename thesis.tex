@@ -720,17 +720,17 @@ A basic example is shown in Figure \ref{fig:cacheStartExample}.
 function batchCache($cacheKeys, $where, $expire,
  $renderFunction) {
    $templateCacheKeys = [];
-   foreach ($cacheKeys as $key => $id) {
-      $templateCacheKeys["$key-$where"] = $id;
+   foreach ($cacheKeys as $key => $ormObject) {
+      $templateCacheKeys["$key-$where"] = $ormObject;
    }
 
    $allHtml = cacheGetMulti($templateCacheKeys, $expire,
       function($missing) use ($renderFunction) {
          $found = [];
 
-         foreach ($missing as $cacheKey => $id) {
+         foreach ($missing as $cacheKey => $ormObject) {
             ob_start(); {
-               $renderFunction(array_shift($misses));
+               $renderFunction($ormObject);
                $html = ob_get_contents();
             } ob_end_clean();
 
@@ -760,9 +760,10 @@ This is especially true for fragments of HTML whose generation time is close to 
 
 The implementation of {\tt batchCache} is depicted in Figure \ref{fig:batchCacheImplementation}.
 {\tt batchCache} accepts an array of ORM objects and, much like {\tt cacheStart}, an additional string to differentiate these cache entries from others constructed from the same objects.
-{\tt batchCache} calls \textsf{Memcached} {\tt getMulti} with the cache keys identifying the provided objects. % TODO: This is super vague.
+{\tt batchCache} calls {\tt cacheGetMulti} with the cache keys returned by the provided objects' {\tt cacheKey} methods.
 For each cache miss, output buffering is started and the supplied rendering function is called with the ORM object.
-Output buffering is then closed and the resulting HTML is stored in the cache and added to the array of resulting HTML. % TODO: Fix the awkwardness of this sentence.
+Output buffering is then closed and the resulting HTML is returned to {\tt cacheGetMulti} which stores it in the cache.
+Once all the HTML has been generated, {\tt cacheGetMulti} returns the HTML fragments in the same order that the cache keys were provided.
 Finally, every fragment of HTML is output to {\tt stdout} in the same order that their corresponding objects were provided.
 This is demonstrated for {\tt Step}s in Figure \ref{fig:batchCacheStep}, which is the cached steps version of Figure \ref{fig:htmlTemplate}.
 
