@@ -216,6 +216,9 @@ There are then a series of cache misses followed by a series of duplicated reque
 These should be avoided if possible because of the redundant work done by each request.
 If not handled properly, this event alone can crash web sites.
 
+Database tables can specify a primary key which declares which columns of the table must have unique values for all tuples stored in the table.
+Primary keys are useful for uniquely identifying tuples because select queries for explicit values of the primary key return at most one record.
+
 The ActiveRecord pattern is a common technique used in web applications to interact with the data stored in a database.
 In the host language, the developer creates classes that represent tables in the database.
 This becomes an object-relational mapping (ORM) in that the properties of the class represent columns in the database.
@@ -552,11 +555,10 @@ WHERE prereq_guideid = ? AND prereq_langid = ?
 We will first discuss how we incorporate caching into our ORM and how it is used for \textsf{iFixit}'s guides.
 The guide and step ORM objects can be found in Figure ~\ref{fig:cachingExample}.
 
-% TODO: Explain what the primary key is.
-The primary key uniquely identifies a tuple in the database and can be used with the ORM to select a single record.
+The primary key of a database table can be used with the ORM to select a single record.
 Once the record is loaded, other data not contained in the primary table is loaded and then the entire object is cached.
 For guides, the {\tt Guide} object is retrieved from the DB and then the {\tt Step} objects are loaded afterwards.
-By default, the cache key for objects is just the primary key.
+By default, the cache key for objects is just the values of primary key columns.
 
 Generational caching relies on a value in the primary table being updated whenever any other data in the table is updated.
 This value can be incorporated into the object's cache key which ensures that the value in the cache will always be correct for that cache key.
