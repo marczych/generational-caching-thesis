@@ -673,7 +673,6 @@ Most of the work performed while implementing the caching strategy involved augm
 In order to add caching to {\tt findAllByKey} we add a wrapper method called {\tt findAllCached}.
 At a very high-level, this method constructs cache keys for the given primary keys and performs a cache {\tt getMulti} on them.
 Any objects that were not cached are retrieved from the database using {\tt findAllByKey} and are then stored in the cache.
-% TODO: Picture.
 
 We allow classes derived from the ORM to specify which columns in addition to the primary key to include in the cache key.
 More data must be retrieved from the database to construct the cache key if only the primary keys are provided to {\tt findAllCached} and the derived class specifies additional cache key columns.
@@ -682,7 +681,6 @@ However, we can do one better and cache that operation by using {\tt findAllCach
 For this call, a flag is passed to {\tt findAllCached} that indicates that only the primary table should be loaded.
 Otherwise, all other meta data would be loaded which is exactly what the first {\tt findAllCached} does.
 The recursive call constructs a cache key using only the primary key to avoid infinite recursion.
-% TODO: Example call stack or something.
 
 The \textsf{Memcached} operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential \textsf{Memcached} {\tt get}s.
 All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
@@ -717,26 +715,65 @@ A basic example is shown in Figure \ref{fig:cacheStartExample}.
 \label{fig:cacheStartExample}
 \end{figure}
 
+\begin{figure}[hbtp]
+\begin{ssp}
+\begin{minted}{php}
+<?php
+function batchCache($cacheKeys, $where, $expire,
+ $renderFunction) {
+   $templateCacheKeys = [];
+   foreach ($cacheKeys as $key => $id) {
+      $templateCacheKeys["$key-$where"] = $id;
+   }
+
+   $allHtml = cacheGetMulti($templateCacheKeys, $expire,
+      function($missing) use ($renderFunction) {
+         $found = [];
+
+         foreach ($missing as $cacheKey => $id) {
+            ob_start(); {
+               $renderFunction(array_shift($misses));
+               $html = ob_get_contents();
+            } ob_end_clean();
+
+            $found[$cacheKey] = $html;
+         }
+
+         return $found;
+      }
+   );
+
+   foreach ($allHtml as $html) {
+      echo $html;
+   }
+}
+?>
+\end{minted}
+\end{ssp}
+\caption{Implementation of batchCache}
+\label{fig:batchCacheImplementation}
+\end{figure}
+
 The second caching function we wrote is {\tt batchCache} which is designed for caching multiple fragments of HTML.
 The most common use case for it is rendering a list of objects one after the other e.g. search results.
 {\tt batchCache} is better than {\tt cacheStart} and {\tt cacheEnd} for this circumstance because of the network overhead for sequential \textsf{Memcached} calls.
 This is especially true for fragments of HTML whose generation time is close to or less than the average time of a \textsf{Memcached} {\tt get}.
 {\tt batchCache} minimizes network overhead by using \textsf{Memcached}'s {\tt getMulti} operation.
 
+The implementation of {\tt batchCache} is depicted in Figure \ref{fig:batchCacheImplementation}.
 {\tt batchCache} accepts an array of ORM objects and, much like {\tt cacheStart}, an additional string to differentiate these cache entries from others constructed from the same objects.
 {\tt batchCache} calls \textsf{Memcached} {\tt getMulti} with the cache keys identifying the provided objects.
 For each cache miss, output buffering is started and the supplied rendering function is called with the ORM object.
 Output buffering is then closed and the resulting HTML is stored in the cache and added to the array of resulting HTML.
-Finally, every fragment of HTML is output to {\tt stdout} in the same order as they were provided.
+Finally, every fragment of HTML is output to {\tt stdout} in the same order that their corresponding objects were provided.
 This is demonstrated for {\tt Step}s in Figure \ref{fig:batchCacheStep}, which is the cached steps version of Figure \ref{fig:htmlTemplate}.
-
-% TODO: Pseudocode for batchCache.
 
 \begin{figure}[h]
 \begin{ssp}
 \begin{minted}{php}
 <div class="steps">
-<? batchCache($guide->steps, 'step_view', function($step) { ?>
+<? batchCache($guide->steps, 'step_view', CACHE_FOREVER,
+    function($step) { ?>
    <div class="step">
       <?= $step->title ?>
    </div>
