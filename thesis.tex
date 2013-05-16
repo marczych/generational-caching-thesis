@@ -172,7 +172,7 @@ Our work makes the following contributions:
    \item An in-depth description of implementing an adapted caching solution in \textsf{iFixit}'s code base
    % TODO: Specify generational caching here? And maybe provide background on what it is before this?
    % TODO: Include this? -- \item Provide a better understanding of when different caching strategies apply to certain situations, types of data, and access patterns.
-   \item A performance comparison and analysis of experiments using real-world traffic
+   \item An analysis of performance improvements by running experiments using real-world traffic
 \end{enumerate}
 
 The rest of this thesis is organized as follows.
@@ -686,7 +686,15 @@ All cached objects are retrieved with one {\tt getMulti} call and the uncached o
 
 \subsection{Caching HTML and Ad Hoc Queries}
 We also cache fragments of HTML because HTML generation can be fairly slow and unperforming.
+This is demonstrated for an example guide in Figure \ref{fig:annotatedCachedGuidePage}.
 To help facilitate this, we implemented a few different caching functions for use in HTML templates.
+
+\begin{figure}[hbtp]
+\centering
+\includegraphics[width=\textwidth,height=0.95\textheight]{assets/annotatedCachedGuidePage.png}
+\caption{Annotated guide page with HTML caching}
+\label{fig:annotatedCachedGuidePage}
+\end{figure}
 
 The first set of functions is {\tt cacheStart} and {\tt cacheEnd} which are used for caching a single block of HTML.
 {\tt cacheStart} accepts either an object that has a {\tt cacheKey} method (e.g. an ORM object) or a string cache key.
