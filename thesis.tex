@@ -831,14 +831,12 @@ This machine runs \textsf{MySQL} {\tt 5.5.29 Percona Server} with EBS-striped vo
 The application machines are {\tt c1.medium} instances with 1.7 GiB of memory and 5 EC2 Compute Units (2 virtual cores with 2.5 EC2 Compute Units each).
 More information regarding EC2 specs can be found on AWS's website \cite{awsInstanceTypes}.
 
-% TODo: Change HTTP request to be simulated requests coming from and to the load balancer.
 \begin{figure}[h]
 \centering
-\includegraphics[width=\textwidth]{assets/experimentalArchitecture.png}
+\includegraphics[width=0.75\textwidth]{assets/experimentalArchitecture.png}
 \caption{Experimental Setup}
 \label{fig:experimentalArchitecture}
 \end{figure}
-
 
 We then replay the requests in the 2 test sets with and without our caching strategy for a total of 4 runs.
 Requests are performed using a NodeJS script running on the load balancer making requests to {\tt localhost} to reduce latency between the simulated client and the web servers.
