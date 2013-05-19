@@ -879,7 +879,49 @@ Both of these should cause a decrease in total database query time.
 % TODO: Write.
 
 \section{Results}
-% TODO: Write. Pretty much a raw data dump of stuff.
+The following are results from the experiment outlined above.
+\textit{Teardown traffic} refers to the Galaxy S4 Teardown traffic starting right before the teardown was published while \textit{Normal traffic} refers to a standard day of traffic starting and ending at midnight.
+Figure \ref{fig:requestsPerSecXTime} shows the requests per second over time for both data sets.
+The \textit{Control} data points are from the code that is currently running \textsf{iFixit} while the \textit{GC} data points are from our improvements using generational caching.
+All ``over time'' graphs are constructed from 15 minute groupings of requests for a total of 96 data points.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{assets/requestsPerSecXTime.png}
+\caption{Requests per second over time for both data sets}
+\label{fig:requestsPerSecXTime}
+\end{figure}
+
+Figures \ref{fig:teardownRespTimeXTime} and \ref{fig:normalRespTimeXTime} show average response time over the entirety of the experiment.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{assets/teardownRespTimeXTime.png}
+\caption{Teardown traffic response time over time}
+\label{fig:teardownRespTimeXTime}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{assets/normalRespTimeXTime.png}
+\caption{Normal traffic response time over time}
+\label{fig:normalRespTimeXTime}
+\end{figure}
+
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{assets/teardownHTMLRenderTimeXTime.png}
+\caption{Teardown traffic HTML render time over time}
+\label{fig:teardownHTMLRenderTimeXTime}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{assets/normalHTMLRenderTimeXTime.png}
+\caption{Normal traffic HTML render time over time}
+\label{fig:normalHTMLRenderTimeXTime}
+\end{figure}
 
 \section{Analysis}
 % TODO: Analyze results. Draw conclusions. Explain stuff.
