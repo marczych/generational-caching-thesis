@@ -966,8 +966,25 @@ Likewise, Figures \ref{fig:teardownHTMLRenderTimeXTime} and \ref{fig:normalHTMLR
 \end{figure}
 
 \section{Analysis}
-% TODO: Analyze results. Draw conclusions. Explain stuff.
+We can see in Figure \ref{fig:averageExperimentTimes} that the decreased response time is caused by the decreased database and HTML render times.
+In particular, the sum of the differences in database and HTML render times is roughly equal to the difference in response time.
+\textsf{Memcached} time varies because different content is cached between the two strategies and there are different numbers of {\tt get}s.
+Figure \ref{fig:averageExperimentCounts} shows that the decrease in queries is the cause of the decrease in query time we observed.
+The number of queries decreased because the requested data is being retrieved from the cache rather than the database.
 
+% TODO: Move most of this to background?
+Unfortunately, \textsf{Memcached} {\tt get}s are very skewed between the two strategies because of \textit{wiki text} rendering.
+Wiki text is user-submitted text that is rendered to HTML before being displayed to the user.
+This transformation is cached because wiki text parsing and rendering is a slow and expensive process.
+Currently, \textsf{iFixit} does a \textsf{Memcached} {\tt multiGet} call to get the rendered HTML for the wiki text of all bullet points of a guide.
+This results in a large number of gets for the control that are nearly all hits.
+Caching HTML in our generational caching implementation eliminates the need for caching wiki text rendering which is why the \textsf{Memcached} {\tt get} count is so much lower.
+Similarly, cache hit rate is decreased for the generational caching implementation because there are no longer a large number of cache hits.
+
+For the teardown traffic, HTML generation time shown in Figure \ref{fig:teardownHTMLRenderTimeXTime} becomes fairly stable very quickly because one piece of content, the teardown, is the most requested item throughout the data set.
+The teardown's HTML is cached early on and is used for subsequent requests.
+However, this is not true of the normal traffic HTML render time because a larger breadth of content is being requested so the chance of finding the cached HTML is much lower.
+Although, as time increases, HTML render time decreases more on the normal traffic than the teardown traffic for the same reason as above.
 
 \chapter{Conclusions and Future Work} \label{conclusions}
 
