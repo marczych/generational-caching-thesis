@@ -908,20 +908,15 @@ The most general value we compare is \textit{page response time}, the total amou
 Response time should decrease because more data is cached and can be returned faster than before.
 Similarly, \textit{HTML generation time} should decrease because fragments of HTML are now being cached.
 
-The interesting values for \textsf{Memcached} stats are \textit{get count}, \textit{hit rate}, and \textit{time spent in cache calls}.
-The get count will likely increase because cache entries are finer-grained.
-Cache hit rate will vary drastically because pages with uncached content will have a large number of misses.
-However, pages with cached content will have either a few cache hits for a large amount of content or many cache hits for finer-grained content.
+The interesting values for \textsf{Memcached} stats are \textit{get~count}, \textit{miss~count}, and \textit{hit~rate}.
+All of these values will vary drastically from page to page depending on whether or not the content is cached.
+Pages with uncached content will have a large number of misses while pages with cached content will have either a few cache hits for a large amount of content or many cache hits for finer-grained content.
 In general, cache hit rate should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
-Time spent in \textsf{Memcached} calls will likely increase because more content is being cached.
 
-Finally, the interesting values for \textsf{MySQL} are \textit{query count} and \textit{total query time}.
+Finally, the interesting values for \textsf{MySQL} are \textit{query~count} and \textit{total~query~time}.
 Query count should go down because the cache should serve more requests that previously were handled by the database.
 Additionally, network overhead is reduced because more content is retrieved in batch using fewer queries.
-Both of these should cause a decrease in total database query time.
-
-%\section{Hypothesis}
-% TODO: Write. If anything take stuff from Measured Values but probably not necessary.
+For both of these reasons, a decrease in total database query time should be observed.
 
 \section{Results} \label{results}
 The following are results from the experiment outlined above.
