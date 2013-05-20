@@ -516,7 +516,7 @@ But first, we must reiterate \textsf{iFixit}'s requirements for such a caching s
 
 \begin{description}
    \item[R1] The caching strategy must be largely transparent to the developer.
-             The developer should only be required to determine what data to cache, not how to cache it and how to invalidate it.
+             The developer should only be required to determine what data to cache, not how to cache the data and how to invalidate the cache entries.
    \item[R2] The caching strategy must allow for finer-grained caching without added complexity.
    \item[R3] The caching strategy must provide a means of caching and invalidating fragments of HTML.
    \item[R4] The caching strategy must result in increased performance in regards to response time and database load. % TODO: Not database load because it's hard to measure? Or it isn't since query count/exec time is good? Be more specific?
@@ -917,7 +917,7 @@ Time spent in \textsf{Memcached} calls will likely increase because more content
 
 Finally, the interesting values for \textsf{MySQL} are \textit{query count} and \textit{total query time}.
 Query count should go down because the cache should serve more requests that previously were handled by the database.
-Additionally, network overhead is reduuced because more content is retrieved in batch using fewer queries.
+Additionally, network overhead is reduced because more content is retrieved in batch using fewer queries.
 Both of these should cause a decrease in total database query time.
 
 %\section{Hypothesis}
@@ -982,32 +982,48 @@ However, \textsf{Memcached} gets and cache hit rate go down.
 Figures~\ref{fig:teardownRespTimeXTime} and~\ref{fig:normalRespTimeXTime} show that average response time has decreased uniformly for our generational caching implementation.
 Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLRenderTimeXTime} show that HTML render time decreases quickly at the beginning and continues to decrease as time goes on.
 
-\begin{figure}[h]
+\begin{figure}[htp]
 \centering
 \includegraphics[width=\textwidth]{assets/teardownRespTimeXTime.png}
 \caption{Teardown traffic response time}
 \label{fig:teardownRespTimeXTime}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[htp]
 \centering
 \includegraphics[width=\textwidth]{assets/normalRespTimeXTime.png}
 \caption{Normal traffic response time}
 \label{fig:normalRespTimeXTime}
 \end{figure}
 
-\begin{figure}[h]
+
+\begin{figure}[htp]
 \centering
 \includegraphics[width=\textwidth]{assets/teardownHTMLRenderTimeXTime.png}
 \caption{Teardown traffic HTML render time over time}
 \label{fig:teardownHTMLRenderTimeXTime}
 \end{figure}
 
-\begin{figure}[h]
+\begin{figure}[htp]
 \centering
 \includegraphics[width=\textwidth]{assets/normalHTMLRenderTimeXTime.png}
 \caption{Normal traffic HTML render time over time}
 \label{fig:normalHTMLRenderTimeXTime}
+\end{figure}
+
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/teardownMissCountXTime.png}
+\caption{Teardown traffic cache miss count over time}
+\label{fig:teardownMissCountXTime}
+\end{figure}
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/normalMissCountXTime.png}
+\caption{Normal traffic cache miss count over time}
+\label{fig:normalMissCountXTime}
 \end{figure}
 
 \section{Analysis}
@@ -1028,11 +1044,14 @@ The teardown's HTML is cached early on and is used for subsequent requests.
 However, this is not true of the normal traffic HTML render time because a larger breadth of content is being requested so the chance of finding the cached HTML is much lower.
 Although, as time increases, HTML render time decreases more on the normal traffic than the teardown traffic for the same reason as above.
 
-\chapter{Conclusions and Future Work} \label{conclusions}
+\subsection{Requirements}
+Go through each requirement and determine if our solution passes or fails.
 
-% TODO: Write.
 
-\section{Future Work Ideas}
+\chapter{Conclusions} \label{conclusions}
+Overall thoughts on caching, generational caching, database load, HTML rendering, web server performance, results.
+
+\section{Future Work}
 How size of cache affects hit rate over long periods of time to evaluate if it's okay to not invalidate anything.
 
 
