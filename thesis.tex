@@ -923,7 +923,7 @@ Both of these should cause a decrease in total database query time.
 %\section{Hypothesis}
 % TODO: Write. If anything take stuff from Measured Values but probably not necessary.
 
-\section{Results}
+\section{Results} \label{results}
 The following are results from the experiment outlined above.
 \textit{Teardown traffic} refers to the Galaxy S4 Teardown traffic starting right before the teardown was published while \textit{Normal traffic} refers to a standard day of traffic starting and ending at midnight.
 Figure~\ref{fig:requestsPerSecXTime} shows the requests per second over time for both data sets.
@@ -1045,7 +1045,23 @@ However, this is not true of the normal traffic HTML render time because a large
 Although, as time increases, HTML render time decreases more on the normal traffic than the teardown traffic for the same reason as above.
 
 \subsection{Requirements}
-Go through each requirement and determine if our solution passes or fails.
+In this section we will determine whether or not our caching solution meets the requirements we set out in Chapter~\ref{designAndImplementation}.
+
+The caching solution is largely transparent to the developer.
+The developer uses the ORM object to construct cache keys and any cache entries using that object are invalidated when they need to be.
+So it looks like {\tt R1} passes.
+
+The caching strategy allows for finer-grained caching without added complexity.
+Since cache entries expire because the cache key changes anytime the data changes, the number of cache entries dependent on a piece of data doesn't increase the complexity of cache invalidation.
+For this reason, {\tt R2} passes.
+
+The caching solution allows for caching and invalidating fragments of HTML.
+This was done at a very granular level with guide steps and they were invalidated as necessary.
+So {\tt R3} passes.
+
+As we saw in Section~\ref{results}, response time, number of database queries, and database query time is reduced using our caching solution, so {\tt R4} passes.
+
+Since we met all the requirements outlined in Chapter~\ref{designAndImplementation}, our generational caching implementation is a success.
 
 
 \chapter{Conclusions} \label{conclusions}
