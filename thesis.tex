@@ -155,7 +155,7 @@ Because of this, server load becomes a real issue especially for the database ma
 \label{fig:iFixitHomePage}
 \end{figure}
 
-One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom} (Figure \ref{fig:iFixitHomePage}).
+One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom} (Figure~\ref{fig:iFixitHomePage}).
 \textsf{iFixit}'s step-by-step guides and question-and-answer platform are driven largely by user-generated content.
 All repair guides on \textsf{iFixit} are publicly editable and contain rich revision history.
 Consequently, all of the content is stored in a database that must be queried in order to respond to requests for data.
@@ -176,7 +176,7 @@ Our work makes the following contributions:
 \end{enumerate}
 
 The rest of this thesis is organized as follows.
-Chapter \ref{background} provides background on caching and outlines related work, chapter \ref{designAndImplementation} describes the design and implementation of the caching system implemented in \textsf{iFixit}'s code base, chapter \ref{validation} validates our work, and chapter \ref{conclusions} concludes.
+Chapter~\ref{background} provides background on caching and outlines related work, chapter~\ref{designAndImplementation} describes the design and implementation of the caching system implemented in \textsf{iFixit}'s code base, chapter~\ref{validation} validates our work, and chapter~\ref{conclusions} concludes.
 
 
 \chapter{Background} \label{background}
@@ -223,7 +223,7 @@ The ActiveRecord pattern is a common technique used in web applications to inter
 In the host language, the developer creates classes that represent tables in the database.
 This becomes an object-relational mapping (ORM) in that the properties of the class represent columns in the database.
 Rows can be inserted, updated, and removed by calling the {\tt insert}, {\tt update}, {\tt delete} methods on the object, respectively.
-This is demonstrated in Figure \ref{fig:activeRecordExample}.
+This is demonstrated in Figure~\ref{fig:activeRecordExample}.
 
 \begin{figure}[h]
 \begin{ssp}
@@ -257,7 +257,7 @@ This {\tt User} can later be retrieved by calling {\tt find}.
 \section{iFixit}
 
 \subsection{Data and Site Usage}
-\textsf{iFixit}'s most popular content is their step-by-step repair guides, an example of which can be seen in Figure \ref{fig:iFixitGuideExample}.
+\textsf{iFixit}'s most popular content is their step-by-step repair guides, an example of which can be seen in Figure~\ref{fig:iFixitGuideExample}.
 An \textsf{iFixit} guide consists of an ordered list of steps as well as meta data about the guide such as title, summary, parts, and tools.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
 To avoid duplicating content, guides can also be included in other guides as prerequisites.
@@ -290,7 +290,7 @@ Sharding the data between multiple database machines to distribute the load is a
 However, consistency and race conditions become major issues that must be addressed.
 
 \subsection{Web Architecture}
-In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure \ref{fig:iFixitArchitecture}, at the time of this writing.
+In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure~\ref{fig:iFixitArchitecture}, at the time of this writing.
 All of \textsf{iFixit}'s traffic goes directly to a load balancer which selects an application machine to handle the request.
 At any given time there are four to eight application machines that run \textsf{iFixit}'s core software which is written in PHP.
 They get all of their data from one master database machine running the Percona build of \textsf{MySQL} which handles all reads and writes.
@@ -334,7 +334,7 @@ This is especially true for fragments of HTML because the cache entries are typi
 In general, the difficulty of cache invalidation for any given datum is proportional to the number of cache entries dependent on that datum and how fine-grained those cache entries are.
 As a result, \textsf{iFixit} doesn't currently cache any HTML fragments.
 
-Our caching strategy aims to solve these two problems by providing a means for caching HTML and making cache invalidation happen automatically when the underlying data has changed.
+Our caching strategy aims to solve these problems by extending cache expiration times, providing a means for caching HTML, making cache invalidation happen automatically when the underlying data has changed.
 
 \section{Related Work}
 \subsection{Research Challenges}
@@ -466,7 +466,7 @@ The result is that adding and removing servers doesn't drastically impact hit ra
 
 
 \chapter{Design and Implementation} \label{designAndImplementation}
-In this chapter, we explain in depth the caching solution we implemented for \textsf{iFixit} and analyze in Chapter \ref{validation}.
+In this chapter, we explain in depth the caching solution we implemented for \textsf{iFixit} and analyze in Chapter~\ref{validation}.
 But first, we must reiterate \textsf{iFixit}'s requirements for such a caching solution.
 
 \begin{description}
@@ -488,11 +488,11 @@ For these reasons, we used generational caching concepts as a starting point for
 
 \subsection{What is being cached}
 This section describes the three primary types of data that are cached in our caching strategy.
-The first data type is objects constructed from query results that represent a tuple in the database (see Figure \ref{fig:ormObject}).
+The first data type is objects constructed from query results that represent a tuple in the database (see Figure~\ref{fig:ormObject}).
 These are used as an ORM which can make modifications to the database as well as retrieve data for consumption.
-The second data type is fragments of HTML generated in templates like the one depicted in Figure \ref{fig:htmlTemplate}.
+The second data type is fragments of HTML generated in templates like the one depicted in Figure~\ref{fig:htmlTemplate}.
 These typically produce output based on data retrieved from the database and need to be invalidated anytime that data has changed.
-Finally, results of ad hoc queries, like the one in Figure \ref{fig:adHocQuery}, are also cached.
+Finally, results of ad hoc queries, like the one in Figure~\ref{fig:adHocQuery}, are also cached.
 These typically are used in addition to the ORM to gather more complex data.
 
 \begin{figure}[hbtp]
@@ -552,7 +552,7 @@ WHERE prereq_guideid = ? AND prereq_langid = ?
 
 \subsection{Caching Approach}
 We will first discuss how we incorporate caching into our ORM and how it is used for \textsf{iFixit}'s guides.
-The guide and step ORM objects can be found in Figure \ref{fig:cachingExample}.
+The guide and step ORM objects can be found in Figure~\ref{fig:cachingExample}.
 
 The primary key of a database table can be used with the ORM to select a single record.
 Once the record is loaded, other data not contained in the primary table is loaded and then the entire object is cached.
@@ -686,7 +686,7 @@ All cached objects are retrieved with one {\tt getMulti} call and the uncached o
 
 \subsection{Caching HTML and Ad Hoc Queries}
 We also cache fragments of HTML because HTML generation can be fairly slow and unperforming.
-This is demonstrated for an example guide in Figure \ref{fig:annotatedCachedGuidePage}.
+This is demonstrated for an example guide in Figure~\ref{fig:annotatedCachedGuidePage}.
 To help facilitate this, we implemented a few different caching functions for use in HTML templates.
 
 \begin{figure}[hbtp]
@@ -703,7 +703,7 @@ If the HTML was found in the cache it is output to {\tt stdout} and {\tt cacheSt
 Otherwise output buffering is started to capture the HTML that is generated when running the template code and {\tt cacheStart} returns {\tt false}.
 A call to {\tt cacheEnd} signals the end of the cached HTML section.
 This function closes output buffering, gets the contents of the buffer, caches it, and finally outputs the HTML to {\tt stdout}.
-A basic example is shown in Figure \ref{fig:cacheStartExample}.
+A basic example is shown in Figure~\ref{fig:cacheStartExample}.
 
 \begin{figure}[h]
 \begin{ssp}
@@ -766,14 +766,14 @@ The most common use case for it is rendering a list of objects one after the oth
 This is especially true for fragments of HTML whose generation time is close to or less than the average time of a \textsf{Memcached} {\tt get}.
 {\tt batchCache} minimizes network overhead by using \textsf{Memcached}'s {\tt getMulti} operation.
 
-The implementation of {\tt batchCache} is depicted in Figure \ref{fig:batchCacheImplementation}.
+The implementation of {\tt batchCache} is depicted in Figure~\ref{fig:batchCacheImplementation}.
 {\tt batchCache} accepts an array of ORM objects and, much like {\tt cacheStart}, an additional string to differentiate these cache entries from others constructed from the same objects.
 {\tt batchCache} calls {\tt cacheGetMulti} with the cache keys returned by the provided objects' {\tt cacheKey} methods.
 For each cache miss, output buffering is started and the supplied rendering function is called with the ORM object.
 Output buffering is then closed and the resulting HTML is returned to {\tt cacheGetMulti} which stores it in the cache.
 Once all the HTML has been generated, {\tt cacheGetMulti} returns the HTML fragments in the same order that the cache keys were provided.
 Finally, every fragment of HTML is output to {\tt stdout} in the same order that their corresponding objects were provided.
-This is demonstrated for {\tt Step}s in Figure \ref{fig:batchCacheStep}, which is the cached steps version of Figure \ref{fig:htmlTemplate}.
+This is demonstrated for {\tt Step}s in Figure~\ref{fig:batchCacheStep}, which is the cached steps version of Figure~\ref{fig:htmlTemplate}.
 
 \begin{figure}[h]
 \begin{ssp}
@@ -793,7 +793,7 @@ This is demonstrated for {\tt Step}s in Figure \ref{fig:batchCacheStep}, which i
 \end{figure}
 
 The same approach can be applied to caching ad hoc query results.
-Figure \ref{fig:adHocQueryCaching} demonstrates this by using {\tt cacheGetAndSet}.
+Figure~\ref{fig:adHocQueryCaching} demonstrates this by using {\tt cacheGetAndSet}.
 The cache key is constructed using the guide's full cache key and the string {\tt -prereqs}, so it will be invalidated when the guide is modified.
 If the value is not cached, {\tt cacheGetAndSet} calls the provided function and caches the result.
 
@@ -829,7 +829,7 @@ The second data set is traffic during \textsf{iFixit}'s Samsung Galaxy S4 Teardo
 Since our caching strategy was only applied to guides, the request logs are filtered to only include requests viewing or modifying guides.
 Otherwise, the results would be affected by other non-guide requests which are not using our generational caching method.
 
-The test environment, depicted in Figure \ref{fig:experimentalArchitecture}, is an isolated clone of \textsf{iFixit}'s production architecture consisting of a load balancer, two application machines, and a database machine.
+The test environment, depicted in Figure~\ref{fig:experimentalArchitecture}, is an isolated clone of \textsf{iFixit}'s production architecture consisting of a load balancer, two application machines, and a database machine.
 Since the traffic replays are a subset of \textsf{iFixit}'s traffic, two application machines are more than enough to handle the load.
 All machines are AWS EC2 nodes running 64-bit CentOS 5.4.
 The load balancer is a {\tt m1.large} instance with 7.5 GiB memory and 4 EC2 Compute Units (2 virtual cores with 2 EC2 Compute Units each).
@@ -881,7 +881,7 @@ Both of these should cause a decrease in total database query time.
 \section{Results}
 The following are results from the experiment outlined above.
 \textit{Teardown traffic} refers to the Galaxy S4 Teardown traffic starting right before the teardown was published while \textit{Normal traffic} refers to a standard day of traffic starting and ending at midnight.
-Figure \ref{fig:requestsPerSecXTime} shows the requests per second over time for both data sets.
+Figure~\ref{fig:requestsPerSecXTime} shows the requests per second over time for both data sets.
 The \textit{Control} data points are from the code that is currently running \textsf{iFixit} while the \textit{GC} data points are from our improvements using generational caching.
 All ``over time'' graphs are constructed from 15 minute groupings of requests for a total of 96 data points.
 
@@ -892,7 +892,7 @@ All ``over time'' graphs are constructed from 15 minute groupings of requests fo
 \label{fig:requestsPerSecXTime}
 \end{figure}
 
-Various times for all experiments are shown in Figure \ref{fig:averageExperimentTimes}.
+Various times for all experiments are shown in Figure~\ref{fig:averageExperimentTimes}.
 As we expected, response, database query, and HTML render times decreased for our generational caching implementation.
 However, \textsf{Memcached} time has remained approximately the same.
 
@@ -913,7 +913,7 @@ However, \textsf{Memcached} time has remained approximately the same.
 \label{fig:averageExperimentTimes}
 \end{figure}
 
-Various counts for all experiments are shown in Figure \ref{fig:averageExperimentCounts}.
+Various counts for all experiments are shown in Figure~\ref{fig:averageExperimentCounts}.
 As we expected, \textsf{Memcached} misses and database queries have decreased for our generational caching implementation.
 However, \textsf{Memcached} gets and cache hit rate go down.
 
@@ -934,8 +934,8 @@ However, \textsf{Memcached} gets and cache hit rate go down.
 \label{fig:averageExperimentCounts}
 \end{figure}
 
-Figures \ref{fig:teardownRespTimeXTime} and \ref{fig:normalRespTimeXTime} show that average response time has decreased uniformly for our generational caching implementation.
-Likewise, Figures \ref{fig:teardownHTMLRenderTimeXTime} and \ref{fig:normalHTMLRenderTimeXTime} show that HTML render time decreases quickly at the beginning and continues to decrease as time goes on.
+Figures~\ref{fig:teardownRespTimeXTime} and~\ref{fig:normalRespTimeXTime} show that average response time has decreased uniformly for our generational caching implementation.
+Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLRenderTimeXTime} show that HTML render time decreases quickly at the beginning and continues to decrease as time goes on.
 
 \begin{figure}[h]
 \centering
@@ -966,10 +966,10 @@ Likewise, Figures \ref{fig:teardownHTMLRenderTimeXTime} and \ref{fig:normalHTMLR
 \end{figure}
 
 \section{Analysis}
-We can see in Figure \ref{fig:averageExperimentTimes} that the decreased response time is caused by the decreased database and HTML render times.
+We can see in Figure~\ref{fig:averageExperimentTimes} that the decreased response time is caused by the decreased database and HTML render times.
 In particular, the sum of the differences in database and HTML render times is roughly equal to the difference in response time.
 \textsf{Memcached} time varies because different content is cached between the two strategies and there are different numbers of {\tt get}s.
-Figure \ref{fig:averageExperimentCounts} shows that the decrease in queries is the cause of the decrease in query time we observed.
+Figure~\ref{fig:averageExperimentCounts} shows that the decrease in queries is the cause of the decrease in query time we observed.
 The number of queries decreased because the requested data is being retrieved from the cache rather than the database.
 
 % TODO: Move most of this to background?
@@ -981,7 +981,7 @@ This results in a large number of gets for the control that are nearly all hits.
 Caching HTML in our generational caching implementation eliminates the need for caching wiki text rendering which is why the \textsf{Memcached} {\tt get} count is so much lower.
 Similarly, cache hit rate is decreased for the generational caching implementation because there are no longer a large number of cache hits.
 
-For the teardown traffic, HTML generation time shown in Figure \ref{fig:teardownHTMLRenderTimeXTime} becomes fairly stable very quickly because one piece of content, the teardown, is the most requested item throughout the data set.
+For the teardown traffic, HTML generation time shown in Figure~\ref{fig:teardownHTMLRenderTimeXTime} becomes fairly stable very quickly because one piece of content, the teardown, is the most requested item throughout the data set.
 The teardown's HTML is cached early on and is used for subsequent requests.
 However, this is not true of the normal traffic HTML render time because a larger breadth of content is being requested so the chance of finding the cached HTML is much lower.
 Although, as time increases, HTML render time decreases more on the normal traffic than the teardown traffic for the same reason as above.
