@@ -937,11 +937,11 @@ All ``over time'' graphs are constructed from 15 minute groupings of requests fo
 \label{fig:requestsPerSecXTime}
 \end{figure}
 
-Various times for all experiments are shown in Figure~\ref{fig:averageExperimentTimes}.
+Various times for all experiments are shown in Table~\ref{tab:averageExperimentTimes}.
 As we expected, response, database query, and HTML render times decreased for our generational caching implementation.
 However, \textsf{Memcached} time has remained approximately the same.
 
-\begin{figure}[h]
+\begin{table}[h]
 \begin{center}
 \begin{tabular}{| l | l | l | l | l |}
    \hline
@@ -955,14 +955,14 @@ However, \textsf{Memcached} time has remained approximately the same.
 \end{tabular}
 \end{center}
 \caption{Average times for all experiments}
-\label{fig:averageExperimentTimes}
-\end{figure}
+\label{tab:averageExperimentTimes}
+\end{table}
 
-Various counts for all experiments are shown in Figure~\ref{fig:averageExperimentCounts}.
+Various counts for all experiments are shown in Table~\ref{tab:averageExperimentCounts}.
 As we expected, \textsf{Memcached} misses and database queries have decreased for our generational caching implementation.
 However, \textsf{Memcached} gets and cache hit rate go down.
 
-\begin{figure}[h]
+\begin{table}[h]
 \begin{center}
 \begin{tabular}{| l | l | l | l | l |}
    \hline
@@ -976,8 +976,8 @@ However, \textsf{Memcached} gets and cache hit rate go down.
 \end{tabular}
 \end{center}
 \caption{Average counts for all experiments}
-\label{fig:averageExperimentCounts}
-\end{figure}
+\label{tab:averageExperimentCounts}
+\end{table}
 
 Figures~\ref{fig:teardownRespTimeXTime} and~\ref{fig:normalRespTimeXTime} show that average response time has decreased uniformly for our generational caching implementation.
 Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLRenderTimeXTime} show that HTML render time decreases quickly at the beginning and continues to decrease as time goes on.
@@ -1027,10 +1027,10 @@ Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLR
 \end{figure}
 
 \section{Analysis}
-We can see in Figure~\ref{fig:averageExperimentTimes} that the decreased response time is caused by the decreased database and HTML render times.
+We can see in Table~\ref{tab:averageExperimentTimes} that the decreased response time is caused by the decreased database and HTML render times.
 In particular, the sum of the differences in database and HTML render times is roughly equal to the difference in response time.
 \textsf{Memcached} time varies because different content is cached between the two strategies and there are different numbers of {\tt get}s.
-Figure~\ref{fig:averageExperimentCounts} shows that the decrease in queries is the cause of the decrease in query time we observed.
+Table~\ref{tab:averageExperimentCounts} shows that the decrease in queries is the cause of the decrease in query time we observed.
 The number of queries decreased because the requested data is being retrieved from the cache rather than the database.
 
 Unfortunately, \textsf{Memcached} {\tt get}s are very skewed between the two strategies because of \textit{wiki text} rendering.
