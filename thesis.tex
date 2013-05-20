@@ -878,7 +878,7 @@ The test environment, depicted in Figure~\ref{fig:experimentalArchitecture}, is 
 Since the traffic replays are a subset of \textsf{iFixit}'s traffic, two application machines are more than enough to handle the load.
 All machines are AWS EC2 nodes running 64-bit CentOS 5.4.
 The load balancer is a {\tt m1.large} instance with 7.5 GiB memory and 4 EC2 Compute Units (2 virtual cores with 2 EC2 Compute Units each).
-This machine runs \textsf{Memcached} {\tt 1.4.15} which is used by the application machines.
+This machine runs \textsf{Memcached} {\tt 1.4.15} which is accessed from the application machines.
 The database machine is a {\tt m1.xlarge} instance with 15 GiB of memory and 8 EC2 Compute Units (4 virtual cores with 2 EC2 Compute Units each).
 This machine runs \textsf{MySQL} {\tt 5.5.29 Percona Server} with EBS-striped volumes.
 The application machines are {\tt c1.medium} instances with 1.7 GiB of memory and 5 EC2 Compute Units (2 virtual cores with 2.5 EC2 Compute Units each).
