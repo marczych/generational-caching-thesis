@@ -270,6 +270,38 @@ The guide is displayed to the user with its prerequisite guides' steps before th
 \label{fig:iFixitGuideExample}
 \end{figure}
 
+Most guide fields, such as \textit{introduction}, \textit{conclusion}, and \textit{step bullets}, contain \textit{wiki text}.
+This text is parsed and rendered into HTML before being returned to the user.
+An example of this transformation can be seen in Figure~\ref{fig:wikiTextTransformation}.
+Wiki parsing and rendering is expensive because it involves lots of regular expressions, text manipulation, and sometimes database queries to retrieve other content to include in the HTML.
+To help mitigate this, rendered wiki text is cached using an {\tt md5} hash of the raw wiki text.
+
+\begin{figure}[hbtp]
+\begin{subfigure}[b]{1.0\textwidth}
+\begin{ssp}
+\begin{minted}{html}
+This is '''a lot easier''' than opening the [guide|1158|iPod touch].
+\end{minted}
+\end{ssp}
+\caption{Raw wiki text}
+\label{fig:wikiTextTransformationRaw}
+\end{subfigure}
+
+\begin{subfigure}[b]{1.0\textwidth}
+\begin{ssp}
+\begin{minted}{html}
+<p>This is <strong>a lot easier</strong> than opening the
+<a href="/Teardown/iPod+Touch+Teardown/1158/1">iPod touch</a>.</p>
+\end{minted}
+\end{ssp}
+\caption{Rendered wiki text}
+\label{fig:wikiTextTransformationRendered}
+\end{subfigure}
+
+\caption{Example wiki text transformation}
+\label{fig:wikiTextTransformation}
+\end{figure}
+
 All of \textsf{iFixit}'s content is dynamic which means that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
 A dynamic website allows users to have rich, modifiable content that is always up-to-date.
 
@@ -311,7 +343,8 @@ All of this is built using Amazon Web Services (AWS) including Elastic Cloud Com
 \textsf{iFixit} currently has a very ad hoc approach to caching.
 Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
 If the object is not in the cache, it is retrieved from the database and stored in the cache for later use.
-The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
+The expiration time is typically on the order of minutes to days depending on the method of invalidation for the data in question.
+To reduce the risk of cache stampedes, expiration times are varied by \textit{10\%} so groups of keys don't expire at the same time.
 \textsf{iFixit} uses two strategies for cache invalidation that are described below.
 
 The first strategy relies on the cache entry's expiration time to update it with fresh data.
@@ -323,6 +356,18 @@ The second strategy used by \textsf{iFixit} involves deleting cache entries when
 It is up to the developer to find the appropriate places to delete cache entries when certain events occur.
 The advantages to this approach are that it's simple to understand, straightforward to implement, and ensures that fresh data is served if done correctly.
 
+\subsubsection{Guides}
+Currently, a database query is always performed to get the main guide data when looking up objects in the ORM.
+However, all other data, such as steps, prerequisites, parts, and tools, is cached as one value for \textit{24 hours}.
+This results in a single database query and a single \textsf{Memcached} {\tt get} to retrieve a cached guide.
+More database queries and \textsf{Memcached} calls are performed to render HTML and retrieve prerequisite guides and non-guide content such as support questions.
+
+Rendering HTML for a guide view page can be very costly because guides have 10's to 100's of wiki text fields that must be rendered.
+Even if all rendered wiki text is cached, there is a large overhead associated with sequential \textsf{Memcached} calls.
+To reduce this overhead, all rendered guide step bullet wiki text is retrieved with one \textsf{Memcached} {\tt getMulti} call prior to rendering HTML.
+Any misses are {\tt set} in the cache once the wiki text is rendered during HTML generation.
+
+\subsubsection{Drawbacks}
 There are two major problems with these techniques.
 The first is that the burden of cache invalidation is on the developer.
 This is because the developer must decide what data to cache and spend time finding all the places where the cache entries should be invalidated.
@@ -972,12 +1017,9 @@ In particular, the sum of the differences in database and HTML render times is r
 Figure~\ref{fig:averageExperimentCounts} shows that the decrease in queries is the cause of the decrease in query time we observed.
 The number of queries decreased because the requested data is being retrieved from the cache rather than the database.
 
-% TODO: Move most of this to background?
 Unfortunately, \textsf{Memcached} {\tt get}s are very skewed between the two strategies because of \textit{wiki text} rendering.
-Wiki text is user-submitted text that is rendered to HTML before being displayed to the user.
-This transformation is cached because wiki text parsing and rendering is a slow and expensive process.
-Currently, \textsf{iFixit} does a \textsf{Memcached} {\tt multiGet} call to get the rendered HTML for the wiki text of all bullet points of a guide.
-This results in a large number of gets for the control that are nearly all hits.
+The control experiment has a very large number of {\tt get}s because of the \textsf{Memcached} {\tt multiGet} call for rendered wiki text.
+Nearly all of these are cache hits which pull up the average hit rate.
 Caching HTML in our generational caching implementation eliminates the need for caching wiki text rendering which is why the \textsf{Memcached} {\tt get} count is so much lower.
 Similarly, cache hit rate is decreased for the generational caching implementation because there are no longer a large number of cache hits.
 
