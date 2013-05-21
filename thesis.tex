@@ -123,7 +123,7 @@ In some cases the site can get overloaded by requests and stop responding altoge
 Websites need to be able to scale with their site traffic to continue providing a good user experience.
 
 Some parts of website scaling are very straightforward.
-Serving static assets such as Cascading Style Sheets (CSS), JavaScript (JS), and images can be offloaded to Content Delivery Networks (CDN) that handle requests separately from other resources such as the page's HTML.
+Serving static assets such as Cascading Style Sheets (CSS), JavaScript (JS), and images can be offloaded to Content Delivery Networks (CDN) that handle requests separately from other resources such as the page's HTML\@.
 Scaling application machines can be accomplished by sending all incoming requests to a load balancer.
 The load balancer then decides what application machine in the cluster of available machines should handle this request.
 The request is forwarded to the selected machine which eventually returns the HTML of the page to the load balancer which then returns it to the user.
@@ -273,7 +273,7 @@ The guide is displayed to the user with its prerequisite guides' steps before th
 Most guide fields, such as \textit{introduction}, \textit{conclusion}, and \textit{step bullets}, contain \textit{wiki text}.
 This text is parsed and rendered into HTML before being returned to the user.
 An example of this transformation can be seen in Figure~\ref{fig:wikiTextTransformation}.
-Wiki parsing and rendering is expensive because it involves lots of regular expressions, text manipulation, and sometimes database queries to retrieve other content to include in the HTML.
+Wiki parsing and rendering is expensive because it involves lots of regular expressions, text manipulation, and sometimes database queries to retrieve other content to include in the HTML\@.
 To help mitigate this, rendered wiki text is cached using an {\tt md5} hash of the raw wiki text.
 
 \begin{figure}[hbtp]
@@ -324,7 +324,7 @@ However, consistency and race conditions become major issues that must be addres
 \subsection{Web Architecture}
 In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure~\ref{fig:iFixitArchitecture}, at the time of this writing.
 All of \textsf{iFixit}'s traffic goes directly to a load balancer which selects an application machine to handle the request.
-At any given time there are four to eight application machines that run \textsf{iFixit}'s core software which is written in PHP.
+At any given time there are four to eight application machines that run \textsf{iFixit}'s core software which is written in PHP\@.
 They get all of their data from one master database machine running the Percona build of \textsf{MySQL} which handles all reads and writes.
 There is also one slave database machine that is asynchronously replicated from the master database using \textsf{MySQL}'s built in replication.
 However, this machine is used purely as a backup and is not used to improve performance.
@@ -357,14 +357,14 @@ It is up to the developer to find the appropriate places to delete cache entries
 The advantages to this approach are that it's simple to understand, straightforward to implement, and ensures that fresh data is served if done correctly.
 
 \subsubsection{Guides}
-Currently, a database query is always performed to get the main guide data when looking up objects in the ORM.
+Currently, a database query is always performed to get the main guide data when looking up objects in the ORM\@.
 However, all other data, such as steps, prerequisites, parts, and tools, is cached as one value for \textit{24 hours}.
 This results in a single database query and a single \textsf{Memcached} {\tt get} to retrieve a cached guide.
 More database queries and \textsf{Memcached} calls are performed to render HTML and retrieve prerequisite guides and non-guide content such as support questions.
 
 Rendering HTML for a guide view page can be very costly because guides have 10's to 100's of wiki text fields that must be rendered.
 Even if all rendered wiki text is cached, there is a large overhead associated with sequential \textsf{Memcached} calls.
-To reduce this overhead, all rendered guide step bullet wiki text is retrieved with one \textsf{Memcached} {\tt getMulti} call prior to rendering HTML.
+To reduce this overhead, all rendered guide step bullet wiki text is retrieved with one \textsf{Memcached} {\tt getMulti} call prior to rendering HTML\@.
 Any misses are {\tt set} in the cache once the wiki text is rendered during HTML generation.
 
 \subsubsection{Drawbacks}
@@ -468,7 +468,7 @@ This allows frequently changing data to have a shorter time to live and infreque
 Some research has been done trying to determine what data is the most useful to cache.
 Many sources propose that fragments of HTML are most useful because a cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store \cite{comparisonOfCachingSolutions, scalableConsistentCaching, howBasecampGotSoFast}.
 
-Baeza-Yates et al. suggested that enforcing cache admission policies is a valuable way to improve hit ratio \cite{cacheAdmissionPolicies}.
+Baeza-Yates et al.\ suggested that enforcing cache admission policies is a valuable way to improve hit ratio \cite{cacheAdmissionPolicies}.
 The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
 Detecting such queries and leaving them out of the cache leaves more room for caching results of frequently accessed queries thus increasing cache hit ratio.
 However, Cambazoglu, Junqueira, and Plachouras claim that the eviction policy doesn't have a significant impact on cache hit ratio because caches can easily be expanded to hold more entries and therefore evictions are rare \cite{refreshingPerspectiveSearch}.
@@ -518,7 +518,7 @@ But first, we must reiterate \textsf{iFixit}'s requirements for such a caching s
    \item[R1] The caching strategy must be largely transparent to the developer.
              The developer should only be required to determine what data to cache, not how to cache the data and how to invalidate the cache entries.
    \item[R2] The caching strategy must allow for finer-grained caching without added complexity.
-   \item[R3] The caching strategy must provide a means of caching and invalidating fragments of HTML.
+   \item[R3] The caching strategy must provide a means of caching and invalidating fragments of HTML\@.
    \item[R4] The caching strategy must result in increased performance in regards to response time and database load. % TODO: Not database load because it's hard to measure? Or it isn't since query count/exec time is good? Be more specific?
 \end{description}
 
@@ -741,8 +741,8 @@ To help facilitate this, we implemented a few different caching functions for us
 \label{fig:annotatedCachedGuidePage}
 \end{figure}
 
-The first set of functions is {\tt cacheStart} and {\tt cacheEnd} which are used for caching a single block of HTML.
-{\tt cacheStart} accepts either an object that has a {\tt cacheKey} method (e.g. an ORM object) or a string cache key.
+The first set of functions is {\tt cacheStart} and {\tt cacheEnd} which are used for caching a single block of HTML\@.
+{\tt cacheStart} accepts either an ORM object or a string cache key.
 Another string is supplied that is added to the cache key to differentiate this fragment of HTML from other fragments constructed from the same object.
 If the HTML was found in the cache it is output to {\tt stdout} and {\tt cacheStart} returns {\tt true}.
 Otherwise output buffering is started to capture the HTML that is generated when running the template code and {\tt cacheStart} returns {\tt false}.
@@ -805,8 +805,8 @@ function batchCache($cacheKeys, $where, $expire,
 \label{fig:batchCacheImplementation}
 \end{figure}
 
-The second caching function we wrote is {\tt batchCache} which is designed for caching multiple fragments of HTML.
-The most common use case for it is rendering a list of objects one after the other e.g. search results.
+The second caching function we wrote is {\tt batchCache} which is designed for caching multiple fragments of HTML\@.
+The most common use case for it is rendering a list of objects one after the other e.g.\ search results.
 {\tt batchCache} is better than {\tt cacheStart} and {\tt cacheEnd} for this circumstance because of the network overhead for sequential \textsf{Memcached} calls.
 This is especially true for fragments of HTML whose generation time is close to or less than the average time of a \textsf{Memcached} {\tt get}.
 {\tt batchCache} minimizes network overhead by using \textsf{Memcached}'s {\tt getMulti} operation.
