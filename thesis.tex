@@ -54,8 +54,6 @@
 \makeatother   % Cancel the effect of \makeatletter
 % ---------------------------------------
 
-% TODO: Put a box around code samples.
-
 
 \begin{document}
 
@@ -170,9 +168,7 @@ Our work makes the following contributions:
 
 \begin{enumerate}
    \item A survey of existing caching solutions applicable to web applications
-   \item An in-depth description of implementing an adapted caching solution in \textsf{iFixit}'s code base
-   % TODO: Specify generational caching here? And maybe provide background on what it is before this?
-   % TODO: Include this? -- \item Provide a better understanding of when different caching strategies apply to certain situations, types of data, and access patterns.
+   \item An in-depth description of implementing an adapted generational caching solution in \textsf{iFixit}'s code base
    \item An analysis of performance improvements by running experiments using real-world traffic
 \end{enumerate}
 
@@ -228,26 +224,26 @@ This is demonstrated in Figure~\ref{fig:activeRecordExample}.
 
 \begin{figure}[h]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
 function createUser($userid, $name, $email) {
-   $user = new User();
-   $user->userid = $userid;
-   $user->name = $name;
-   $user->email = $email;
-   $user->insert();
-   return $user;
+  $user = new User();
+  $user->userid = $userid;
+  $user->name = $name;
+  $user->email = $email;
+  $user->insert();
+  return $user;
 }
 
 function getUser($userid) {
-   $user = User::find($userid);
-   return $user;
+  $user = User::find($userid);
+  return $user;
 }
 ?>
 \end{minted}
-\end{ssp}
 \caption{Basic ActiveRecord example.}
 \label{fig:activeRecordExample}
+\end{ssp}
 \end{figure}
 
 In this example, {\tt User} is a class that implements the ActiveRecord pattern.
@@ -280,23 +276,24 @@ To help mitigate this, rendered wiki text is cached using an {\tt md5} hash of t
 \begin{figure}[hbtp]
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
-\begin{minted}{html}
+\begin{minted}[frame=lines]{html}
 This is '''a lot easier''' than opening the [guide|1158|iPod touch].
 \end{minted}
-\end{ssp}
 \caption{Raw wiki text}
 \label{fig:wikiTextTransformationRaw}
+\end{ssp}
 \end{subfigure}
 
+\vspace{2em}
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
-\begin{minted}{html}
+\begin{minted}[frame=lines]{html}
 <p>This is <strong>a lot easier</strong> than opening the
 <a href="/Teardown/iPod+Touch+Teardown/1158/1">iPod touch</a>.</p>
 \end{minted}
-\end{ssp}
 \caption{Rendered wiki text}
 \label{fig:wikiTextTransformationRendered}
+\end{ssp}
 \end{subfigure}
 
 \caption{Example wiki text transformation}
@@ -544,52 +541,54 @@ These typically are used in addition to the ORM to gather more complex data.
 \begin{figure}[hbtp]
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
 class Guide extends ORMObject {
-   private $guideid;
-   private $langid;
-   private $title;
-   private $difficulty;
-   private $steps;
+  private $guideid;
+  private $langid;
+  private $title;
+  private $difficulty;
+  private $steps;
 }
 ?>
 \end{minted}
-\end{ssp}
 \caption{ORM Object}
 \label{fig:ormObject}
+\end{ssp}
 \end{subfigure}
 
+\vspace{2em}
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <div class="guide">
-   <h3><?= $guide->title ?></h3>
-   <p>Difficulty: <?= $guide->difficulty ?></p>
-   <div class="steps">
-   <? foreach ($guide->steps as $step): ?>
-      <div class="step">
-         <?= $step->title ?>
-      </div>
-   <? endforeach ?>
-   </div>
+  <h3><?= $guide->title ?></h3>
+  <p>Difficulty: <?= $guide->difficulty ?></p>
+  <div class="steps">
+  <? foreach ($guide->steps as $step): ?>
+    <div class="step">
+      <?= $step->title ?>
+    </div>
+  <? endforeach ?>
+  </div>
 </div>
 \end{minted}
-\end{ssp}
 \caption{HTML template}
 \label{fig:htmlTemplate}
+\end{ssp}
 \end{subfigure}
 
+\vspace{2em}
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
-\begin{minted}{sql}
+\begin{minted}[frame=lines]{sql}
 SELECT guideid, langid
 FROM guide_prereqs
 WHERE prereq_guideid = ? AND prereq_langid = ?
 \end{minted}
-\end{ssp}
 \caption{Ad hoc query}
 \label{fig:adHocQuery}
+\end{ssp}
 \end{subfigure}
 
 \caption{Data types being cached}
@@ -647,59 +646,59 @@ Rather than including the step number in the cache key, a placeholder value is u
 \begin{figure}[h]
 \begin{subfigure}[h]{0.5\textwidth}
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
 class Guide extends ORMObject {
-   protected static $cacheCols =
-    ['modified_date'];
+  protected static $cacheCols =
+   ['modified_date'];
 
-   // Primary key.
-   protected $guideid;
-   protected $langid;
+  // Primary key.
+  protected $guideid;
+  protected $langid;
 
-   // Columns from guide table.
-   protected $title;
-   protected $difficulty;
-   protected $modified_date;
-   protected $revisionid;
+  // Columns from guide table.
+  protected $title;
+  protected $difficulty;
+  protected $modified_date;
+  protected $revisionid;
 
-   // Retrieved from other tables.
-   protected $steps;
-   protected $parts;
+  // From other tables.
+  protected $steps;
+  protected $parts;
 }
 ?>
 \end{minted}
-\end{ssp}
 \caption{Guide ORM object}
 \label{fig:guideORMTable}
+\end{ssp}
 \end{subfigure}
 \begin{subfigure}[h]{0.5\textwidth}
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
 class Step extends ORMObject {
-   protected static $cacheCols =
-    ['revisionid'];
+  protected static $cacheCols =
+   ['revisionid'];
 
-   // Primary key.
-   private $stepid;
+  // Primary key.
+  private $stepid;
 
-   // Columns from step table.
-   private $guideid;
-   private $langid;
-   private $title;
-   private $orderby;
-   private $revisionid;
+  // Columns from step table.
+  private $guideid;
+  private $langid;
+  private $title;
+  private $orderby;
+  private $revisionid;
 
-   // Retrieved from other tables.
-   private $media;
-   private $lines;
+  // From other tables.
+  private $media;
+  private $lines;
 }
 ?>
 \end{minted}
-\end{ssp}
 \caption{Step ORM object}
 \label{fig:stepORMObject}
+\end{ssp}
 \end{subfigure}
 \caption{Example guide and step ORM objects}
 \label{fig:cachingExample}
@@ -753,57 +752,57 @@ A basic example is shown in Figure~\ref{fig:cacheStartExample}.
 
 \begin{figure}[h]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <? if (!cacheStart($guide, 'view-all', CACHE_FOREVER)): ?>
-   <div class="guide">
-      <h3><?= $guide->title ?></h3>
-      <p>Difficulty: <?= $guide->difficulty ?></p>
-      <? /* Step HTML generation. */ ?>
-   </div>
+  <div class="guide">
+    <h3><?= $guide->title ?></h3>
+    <p>Difficulty: <?= $guide->difficulty ?></p>
+    <? /* Step HTML generation. */ ?>
+  </div>
 <? cacheEnd(); endif ?>
 \end{minted}
-\end{ssp}
 \caption{Example usage of cacheStart and cacheEnd}
 \label{fig:cacheStartExample}
+\end{ssp}
 \end{figure}
 
 \begin{figure}[hbtp]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
 function batchCache($cacheKeys, $where, $expire,
  $renderFunction) {
-   $templateCacheKeys = [];
-   foreach ($cacheKeys as $key => $ormObject) {
-      $templateCacheKeys["$key-$where"] = $ormObject;
-   }
+  $templateCacheKeys = [];
+  foreach ($cacheKeys as $key => $ormObject) {
+    $templateCacheKeys["$key-$where"] = $ormObject;
+  }
 
-   $allHtml = cacheGetMulti($templateCacheKeys, $expire,
-      function($missing) use ($renderFunction) {
-         $found = [];
+  $allHtml = cacheGetMulti($templateCacheKeys, $expire,
+   function($missing) use ($renderFunction) {
+     $found = [];
 
-         foreach ($missing as $cacheKey => $ormObject) {
-            ob_start(); {
-               $renderFunction($ormObject);
-               $html = ob_get_contents();
-            } ob_end_clean();
+     foreach ($missing as $cacheKey => $ormObject) {
+       ob_start(); {
+         $renderFunction($ormObject);
+         $html = ob_get_contents();
+       } ob_end_clean();
 
-            $found[$cacheKey] = $html;
-         }
+       $found[$cacheKey] = $html;
+     }
 
-         return $found;
-      }
-   );
+     return $found;
+    }
+  );
 
-   foreach ($allHtml as $html) {
-      echo $html;
-   }
+  foreach ($allHtml as $html) {
+    echo $html;
+  }
 }
 ?>
 \end{minted}
-\end{ssp}
 \caption{Implementation of batchCache}
 \label{fig:batchCacheImplementation}
+\end{ssp}
 \end{figure}
 
 The second caching function we wrote is {\tt batchCache} which is designed for caching multiple fragments of HTML\@.
@@ -823,19 +822,19 @@ This is demonstrated for {\tt Step}s in Figure~\ref{fig:batchCacheStep}, which i
 
 \begin{figure}[h]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <div class="steps">
 <? batchCache($guide->steps, 'step_view', CACHE_FOREVER,
     function($step) { ?>
    <div class="step">
-      <?= $step->title ?>
+     <?= $step->title ?>
    </div>
 <? }); ?>
 </div>
 \end{minted}
-\end{ssp}
 \caption{Example usage of batchCache for Steps}
 \label{fig:batchCacheStep}
+\end{ssp}
 \end{figure}
 
 The same approach can be applied to caching ad hoc query results.
@@ -845,21 +844,21 @@ If the value is not cached, {\tt cacheGetAndSet} calls the provided function and
 
 \begin{figure}[h]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
 $cacheKey = $guide->cacheKey() . "-prereqs";
 $prereqs = cacheGetAndSet($cacheKey, function() use ($guide) {
-   return dbQuery("
-      SELECT guideid, langid
-      FROM guide_prereqs
-      WHERE prereq_guideid = ? AND prereq_langid = ?",
-    [$guide->guideid, $guide->langid]);
+  return dbQuery("
+    SELECT guideid, langid
+    FROM guide_prereqs
+    WHERE prereq_guideid = ? AND prereq_langid = ?",
+   [$guide->guideid, $guide->langid]);
 });
 ?>
 \end{minted}
-\end{ssp}
 \caption{Ad hoc query caching}
 \label{fig:adHocQueryCaching}
+\end{ssp}
 \end{figure}
 
 
