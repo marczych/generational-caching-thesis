@@ -906,12 +906,14 @@ Afterwards, the stats logging table is extracted using {\tt mysqldump} so the da
 \section{Measured Values}
 The most general value we compare is \textit{page response time}, the total amount of time the request spent on our servers.
 Response time should decrease because more data is cached and can be returned faster than before.
-Similarly, \textit{HTML generation time} should decrease because fragments of HTML are now being cached.
+Similarly, \textit{HTML generation time} should decrease because fragments of HTML are now cached.
 
-The interesting values for \textsf{Memcached} stats are \textit{get~count}, \textit{miss~count}, and \textit{hit~rate}.
+The interesting values for \textsf{Memcached} stats are \textit{get~count} and \textit{miss~count}.
 All of these values will vary drastically from page to page depending on whether or not the content is cached.
 Pages with uncached content will have a large number of misses while pages with cached content will have either a few cache hits for a large amount of content or many cache hits for finer-grained content.
-In general, cache hit rate should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
+In general, \textsf{Memcached} misses should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
+Because of the large number of cache hits for rendered wiki text, \textit{cache~hit~rate} will be much higher for the control than our generational caching implementation.
+However, miss count is less biased once most content is cached which is why miss count is a more useful measurement.
 
 Finally, the interesting values for \textsf{MySQL} are \textit{query~count} and \textit{total~query~time}.
 Query count should go down because the cache should serve more requests that previously were handled by the database.
@@ -919,10 +921,10 @@ Additionally, network overhead is reduced because more content is retrieved in b
 For both of these reasons, a decrease in total database query time should be observed.
 
 \section{Results} \label{results}
-The following are results from the experiment outlined above.
+The following are results from the experiments outlined above.
 \textit{Teardown traffic} refers to the Galaxy S4 Teardown traffic starting right before the teardown was published while \textit{Normal traffic} refers to a standard day of traffic starting and ending at midnight.
 Figure~\ref{fig:requestsPerSecXTime} shows the requests per second over time for both data sets.
-The \textit{Control} data points are from the code that is currently running \textsf{iFixit} while the \textit{GC} data points are from our improvements using generational caching.
+The \textit{Control} data points are from the code that is currently running \textsf{www.iFixit.com} while the \textit{GC} data points are from our improvements using generational caching.
 All ``over time'' graphs are constructed from 15 minute groupings of requests for a total of 96 data points.
 
 \begin{figure}[h]
@@ -953,7 +955,7 @@ However, \textsf{Memcached} time has remained approximately the same.
 \label{tab:averageExperimentTimes}
 \end{table}
 
-Various counts for all experiments are shown in Table~\ref{tab:averageExperimentCounts}.
+\textsf{Memcached} and database counts for all experiments are shown in Table~\ref{tab:averageExperimentCounts}.
 As we expected, \textsf{Memcached} misses and database queries have decreased for our generational caching implementation.
 However, \textsf{Memcached} gets and cache hit rate go down.
 
@@ -976,6 +978,10 @@ However, \textsf{Memcached} gets and cache hit rate go down.
 
 Figures~\ref{fig:teardownRespTimeXTime} and~\ref{fig:normalRespTimeXTime} show that average response time has decreased uniformly for our generational caching implementation.
 Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLRenderTimeXTime} show that HTML render time decreases quickly at the beginning and continues to decrease as time goes on.
+Equilibrium is reached much more quickly in the teardown traffic than the normal traffic.
+A similar phenomenon can be seen in \textsf{Memcached} miss count, shown in Figures~\ref{fig:teardownMissCountXTime} and~\ref{fig:normalMissCountXTime}.
+For the majority of the experiments, miss counts are remarkably similar between the control and our generational caching implementation.
+However, miss count for the control increases significantly at the last 2 to 3 hours of the experiment.
 
 \begin{figure}[htp]
 \centering
@@ -983,7 +989,6 @@ Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLR
 \caption{Teardown traffic response time}
 \label{fig:teardownRespTimeXTime}
 \end{figure}
-
 \begin{figure}[htp]
 \centering
 \includegraphics[width=\textwidth]{assets/normalRespTimeXTime.png}
@@ -998,7 +1003,6 @@ Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLR
 \caption{Teardown traffic HTML render time over time}
 \label{fig:teardownHTMLRenderTimeXTime}
 \end{figure}
-
 \begin{figure}[htp]
 \centering
 \includegraphics[width=\textwidth]{assets/normalHTMLRenderTimeXTime.png}
@@ -1013,7 +1017,6 @@ Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLR
 \caption{Teardown traffic cache miss count over time}
 \label{fig:teardownMissCountXTime}
 \end{figure}
-
 \begin{figure}[htp]
 \centering
 \includegraphics[width=\textwidth]{assets/normalMissCountXTime.png}
@@ -1022,22 +1025,27 @@ Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLR
 \end{figure}
 
 \section{Analysis}
+In general, measured values reach equilibrium much more quickly during teardown traffic because most of the requests are for the teardown which is fully cached.
+The normal traffic experiments request a larger breadth of content so a smaller percentage of requested content is cached.
 We can see in Table~\ref{tab:averageExperimentTimes} that the decreased response time is caused by the decreased database and HTML render times.
 In particular, the sum of the differences in database and HTML render times is roughly equal to the difference in response time.
 \textsf{Memcached} time varies because different content is cached between the two strategies and there are different numbers of {\tt get}s.
-Table~\ref{tab:averageExperimentCounts} shows that the decrease in queries is the cause of the decrease in query time we observed.
+Table~\ref{tab:averageExperimentCounts} shows that the decrease in number of queries is the cause of the observed decrease in query time.
 The number of queries decreased because the requested data is being retrieved from the cache rather than the database.
 
 Unfortunately, \textsf{Memcached} {\tt get}s are very skewed between the two strategies because of \textit{wiki text} rendering.
 The control experiment has a very large number of {\tt get}s because of the \textsf{Memcached} {\tt multiGet} call for rendered wiki text.
 Nearly all of these are cache hits which pull up the average hit rate.
 Caching HTML in our generational caching implementation eliminates the need for caching wiki text rendering which is why the \textsf{Memcached} {\tt get} count is so much lower.
-Similarly, cache hit rate is decreased for the generational caching implementation because there are no longer a large number of cache hits.
+Similarly, cache hit rate decreases for the generational caching implementation because there are no longer a large number of cache hits for rendered wiki text.
 
-For the teardown traffic, HTML generation time shown in Figure~\ref{fig:teardownHTMLRenderTimeXTime} becomes fairly stable very quickly because one piece of content, the teardown, is the most requested item throughout the data set.
-The teardown's HTML is cached early on and is used for subsequent requests.
-However, this is not true of the normal traffic HTML render time because a larger breadth of content is being requested so the chance of finding the cached HTML is much lower.
-Although, as time increases, HTML render time decreases more on the normal traffic than the teardown traffic for the same reason as above.
+\textsf{Memcached} miss counts remain at nearly the same values between the control and generational caching runs for most of the experiment because the requested content is either cached or uncached in both experiments.
+The first few hours demonstrate how requesting uncached content affects misses because \textsf{Memcached} is flushed at the very beginning of the experiments.
+There are a large number of misses for the control because of the \textsf{Memcached} {\tt multiGet} call for rendered wiki text.
+Our generational caching implementation has a large number of misses because cache misses result in more cache {\tt get}s which are also misses.
+They diverge around hour 22 because most guide cache times are set to expire after 24 hours.
+Varying 24 hours by {\tt 10\%} means that cache entries will start to expire after about 22 hours.
+This doesn't occur in the generational caching implementation because cache entries aren't set to expire at all which results in a decreasing miss count over time.
 
 \subsection{Requirements}
 In this section we will determine whether or not our caching solution meets the requirements we set out in Chapter~\ref{designAndImplementation}.
