@@ -80,7 +80,7 @@
 \committeemembershippage
 
 \begin{abstract}
-Web site scaling has been an issue since the inception of the web.
+Website scaling has been an issue since the inception of the web.
 The demand for user generated content and personalized web pages leads to storing all content in a database on the web server.
 Unfortunately, scaling the database to handle large amounts of traffic is still a problem many companies face.
 One such company is \textsf{iFixit}, a provider of free, publicly-editable, online repair manuals.
@@ -93,7 +93,7 @@ This ensures that cache keys change whenever the object is modified, which effec
 Fine-grained caching is now very simple because the developer doesn't need to explicitly delete all possible cache keys that might need to be invalidated when an object is modified.
 This is particularly useful for caching arbitrary fragments of HTML without increasing the complexity of cache invalidation.
 
-We describe the process of implementing a caching strategy based on generational caching concepts in \textsf{iFixit}'s web site.
+We describe the process of implementing a caching strategy based on generational caching concepts in \textsf{iFixit}'s website.
 The results of our implementation show roughly X\% decrease in page response time and insert any other results here.
 \end{abstract}
 
@@ -116,7 +116,7 @@ The results of our implementation show roughly X\% decrease in page response tim
 
 
 \chapter{Introduction} \label{introduction}
-Web scalability has been an issue for web sites since the dot-com boom of the late nineties \cite{webServerScaling}.
+Web scalability has been an issue for websites since the dot-com boom of the late nineties \cite{webServerScaling}.
 All moderately sized websites experience web server issues as their breadth of content as well as the number of active users grow.
 If not properly addressed, the website's performance suffers.
 In some cases the site can get overloaded by requests and stop responding altogether.
@@ -192,7 +192,7 @@ Caching is effective because cache lookups are much faster than retrieving data 
 Additionally, caching exploits locality.
 Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
 Spatial locality is the idea that items in nearby storage locations are referenced in close proximity to one another.
-As of late, spatial locality has been broadened for web sites to include access patterns such as recommended and related content.
+As of late, spatial locality has been broadened for websites to include access patterns such as recommended and related content.
 
 Caches can be of the static or dynamic type.
 A static cache is one that is not updated as a result of the application running.
@@ -214,7 +214,7 @@ One such method is to perform cache invalidation upon data modification which re
 A cache stampede can occur when a cache that is frequently requested is invalidated.
 There are then a series of cache misses followed by a series of duplicated requests to the backing store followed by a series of cache sets.
 These should be avoided if possible because of the redundant work done by each request.
-If not handled properly, a single cache stampede can crash web sites.
+If not handled properly, a single cache stampede can crash websites.
 
 Database tables can specify a primary key which declares which columns of the table must have unique values for all tuples stored in the table.
 Primary keys are useful for uniquely identifying tuples because {\tt SELECT} queries for explicit values of the primary key return at most one record.
@@ -1055,7 +1055,6 @@ In this section we will determine whether or not our caching solution meets the 
              The developer uses the ORM object to construct cache keys and any cache entries using that object are invalidated when they need to be.
    \item[R2] The caching strategy allows for finer-grained caching without added complexity.
              Since cache entries expire because the cache key changes anytime the data changes, the number of cache entries dependent on a piece of data doesn't increase the complexity of cache invalidation.
-
    \item[R3] The caching solution allows for caching and invalidating fragments of HTML\@.
              This was done at a very granular level with guide steps and they were invalidated as necessary.
    \item[R4] As we saw in Section~\ref{results}, response time, number of database queries, and database query time is reduced using our caching solution.
