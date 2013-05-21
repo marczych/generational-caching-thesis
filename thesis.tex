@@ -93,6 +93,7 @@ Fine-grained caching is now very simple because the developer doesn't need to ex
 This is particularly useful for caching arbitrary fragments of HTML without increasing the complexity of cache invalidation.
 
 We describe the process of implementing a caching strategy based on generational caching concepts in \textsf{iFixit}'s website.
+% TODO: Update this value.
 The results of our implementation show roughly X\% decrease in page response time and insert any other results here.
 \end{abstract}
 
@@ -1077,6 +1078,7 @@ All of the cache entries that depend on that data are effectively invalidated be
 This results in the ability to perform fine-grained caching without forcing the developer to invalidate cache entries when data changes.
 
 We implemented generational caching for \textsf{iFixit}'s guides to find that this approach works remarkably well.
+% TODO: Update this value.
 In particular, HTML generation time, number of database queries, and average response time decreased by X\%, Y\%, and Z\%, respectively.
 Just as important, cache invalidation was transparent to the developer because the ORM handled the retrieval of data and generation of cache keys.
 We are eager to incorporate our generational caching solution into other areas of the site to simplify the implementation of caching and improve performance.
