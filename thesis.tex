@@ -54,6 +54,7 @@
 \makeatother   % Cancel the effect of \makeatletter
 % ---------------------------------------
 
+% TODO: Put a box around code samples.
 
 
 \begin{document}
@@ -383,7 +384,7 @@ Our caching strategy aims to solve these problems by extending cache expiration 
 
 \section{Related Work}
 \subsection{Research Challenges}
-Most research is focused on addressing two core challenges of caching: cache coherency and ease of use.
+Most research is focused on addressing two core challenges of caching: cache coherency and ease-of-use.
 In some cases, maintaining cache coherency is trivial because there is only one cache entry associated with the underlying data.
 However, with more complex data the situation is much more difficult.
 There may be dependencies between objects which means that multiple cache entries need to be invalidated at the same time.
@@ -1064,10 +1065,27 @@ Since we met all the requirements outlined in Chapter~\ref{designAndImplementati
 
 
 \chapter{Conclusions} \label{conclusions}
-Overall thoughts on caching, generational caching, database load, HTML rendering, web server performance, results.
+Website scaling has been and will continue to be a major issue for small to large web companies.
+A common solution to this problem, like many other areas of Computer Science, is some form of caching.
+Values that are expensive to generate, such as rendered HTML and database queries, can be cached so they can be retrieved much faster in subsequent requests.
+However, ease-of-development, fine-grained cache entries, and cache invalidation are in direct conflict with each other.
+In particular, cache invalidation becomes more difficult as the number of cache entries that must be invalidated increases.
+Unfortunately, this burden is typically put on the application developer.
 
-\section{Future Work}
-How size of cache affects hit rate over long periods of time to evaluate if it's okay to not invalidate anything.
+Generational caching is a technique that attempts to relieve the burden of cache invalidation even in situations with many dependent cache entries.
+The novel idea is that the cache key changes when the underlying data is updated, which is typically achieved by including the data's modified date in the cache key.
+All of the cache entries that depend on that data are effectively invalidated because they won't be referenced again.
+This results in the ability to perform fine-grained caching without forcing the developer to invalidate cache entries when data changes.
+
+We implemented generational caching for \textsf{iFixit}'s guides to find that this approach works remarkably well.
+In particular, HTML generation time, number of database queries, and average response time decreased by X\%, Y\%, and Z\%, respectively.
+Just as important, cache invalidation was transparent to the developer because the ORM handled the retrieval of data and generation of cache keys.
+We are eager to incorporate our generational caching solution into other areas of the site to simplify the implementation of caching and improve performance.
+
+
+% TODO: Write if we want future work.
+%\section{Future Work}
+%How size of cache affects hit rate over long periods of time to evaluate if it's okay to not invalidate anything.
 
 
 % ------------- End main chapters ----------------------
