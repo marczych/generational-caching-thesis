@@ -519,7 +519,7 @@ But first, we must reiterate \textsf{iFixit}'s requirements for such a caching s
              The developer should only be required to determine what data to cache, not how to cache the data and how to invalidate the cache entries.
    \item[R2] The caching strategy must allow for finer-grained caching without added complexity.
    \item[R3] The caching strategy must provide a means of caching and invalidating fragments of HTML\@.
-   \item[R4] The caching strategy must result in increased performance in regards to response time and database load. % TODO: Not database load because it's hard to measure? Or it isn't since query count/exec time is good? Be more specific?
+   \item[R4] The caching strategy must result in increased performance in regards to response time and database load.
 \end{description}
 
 The rest of this chapter is organized as follows.
@@ -1050,19 +1050,16 @@ This doesn't occur in the generational caching implementation because cache entr
 \subsection{Requirements}
 In this section we will determine whether or not our caching solution meets the requirements we set out in Chapter~\ref{designAndImplementation}.
 
-The caching solution is largely transparent to the developer.
-The developer uses the ORM object to construct cache keys and any cache entries using that object are invalidated when they need to be.
-So it looks like {\tt R1} passes.
+\begin{description}
+   \item[R1] The caching solution is largely transparent to the developer.
+             The developer uses the ORM object to construct cache keys and any cache entries using that object are invalidated when they need to be.
+   \item[R2] The caching strategy allows for finer-grained caching without added complexity.
+             Since cache entries expire because the cache key changes anytime the data changes, the number of cache entries dependent on a piece of data doesn't increase the complexity of cache invalidation.
 
-The caching strategy allows for finer-grained caching without added complexity.
-Since cache entries expire because the cache key changes anytime the data changes, the number of cache entries dependent on a piece of data doesn't increase the complexity of cache invalidation.
-For this reason, {\tt R2} passes.
-
-The caching solution allows for caching and invalidating fragments of HTML.
-This was done at a very granular level with guide steps and they were invalidated as necessary.
-So {\tt R3} passes.
-
-As we saw in Section~\ref{results}, response time, number of database queries, and database query time is reduced using our caching solution, so {\tt R4} passes.
+   \item[R3] The caching solution allows for caching and invalidating fragments of HTML\@.
+             This was done at a very granular level with guide steps and they were invalidated as necessary.
+   \item[R4] As we saw in Section~\ref{results}, response time, number of database queries, and database query time is reduced using our caching solution.
+\end{description}
 
 Since we met all the requirements outlined in Chapter~\ref{designAndImplementation}, our generational caching implementation is a success.
 
