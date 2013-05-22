@@ -55,7 +55,6 @@
 % ---------------------------------------
 
 
-
 \begin{document}
 
 % Declarations for Front Matter
@@ -80,8 +79,8 @@
 \committeemembershippage
 
 \begin{abstract}
-Web site scaling has been an issue since the inception of the web.
-The demand for user generated content and personalized web pages leads to storing all content in a database on the web server.
+Website scaling has been an issue since the inception of the web.
+The demand for user generated content and personalized web pages requires the use of a database for a storage engine.
 Unfortunately, scaling the database to handle large amounts of traffic is still a problem many companies face.
 One such company is \textsf{iFixit}, a provider of free, publicly-editable, online repair manuals.
 Like many websites, \textsf{iFixit} uses \textsf{Memcached} to decrease database load and improve response time.
@@ -93,8 +92,9 @@ This ensures that cache keys change whenever the object is modified, which effec
 Fine-grained caching is now very simple because the developer doesn't need to explicitly delete all possible cache keys that might need to be invalidated when an object is modified.
 This is particularly useful for caching arbitrary fragments of HTML without increasing the complexity of cache invalidation.
 
-We describe the process of implementing a caching strategy based on generational caching concepts in \textsf{iFixit}'s web site.
-The results of our implementation show roughly X\% decrease in page response time and insert any other results here.
+We describe the process of implementing a caching strategy based on generational caching concepts in \textsf{iFixit}'s website.
+% TODO: Update this value with fresh results.
+Our implementation yielded a 20\% improvement in page response time by caching database queries and fragments of HTML.
 \end{abstract}
 
 
@@ -116,18 +116,16 @@ The results of our implementation show roughly X\% decrease in page response tim
 
 
 \chapter{Introduction} \label{introduction}
-Web scalability has been an issue for web sites since the dot-com boom of the late nineties \cite{webServerScaling}.
+Web scalability has been an issue for websites since the dot-com boom of the late nineties \cite{webServerScaling}.
 All moderately sized websites experience web server issues as their breadth of content as well as the number of active users grow.
-If not properly addressed, the website's performance suffers.
-In some cases the site can get overloaded by requests and stop responding altogether.
-Websites need to be able to scale with their site traffic to continue providing a good user experience.
+If not properly addressed, the website's performance suffers and in some cases the site can get overloaded by requests and stop responding altogether.
+Websites need to be able to scale with increasing site traffic to continue providing a good user experience.
 
-Some parts of website scaling are very straightforward.
-Serving static assets such as Cascading Style Sheets (CSS), JavaScript (JS), and images can be offloaded to Content Delivery Networks (CDN) that handle requests separately from other resources such as the page's HTML.
-Scaling application machines can be accomplished by sending all incoming requests to a load balancer.
-The load balancer then decides what application machine in the cluster of available machines should handle this request.
+Some aspects of website scaling are very straightforward.
+Serving static assets such as Cascading Style Sheets (CSS), JavaScript (JS), and images can be offloaded to Content Delivery Networks (CDN) that handle requests separately from other resources such as the page's HTML\@.
+Scaling application machines can be accomplished by load balancing all incoming requests amongst a cluster of application machines.
 The request is forwarded to the selected machine which eventually returns the HTML of the page to the load balancer which then returns it to the user.
-Although application machines can be scaled easily, they all still need to access the same underlying data which is typically a single database machine.
+Although application machines can be scaled easily, each one still needs to access the same underlying data which is typically a single database machine.
 The database is the hardest resource to scale because of the inherent problems in distributing data while maintaining consistency.
 
 The ubiquitous solution to scaling websites is some form of caching.
@@ -155,7 +153,7 @@ Because of this, server load becomes a real issue especially for the database ma
 \label{fig:iFixitHomePage}
 \end{figure}
 
-One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom} (Figure \ref{fig:iFixitHomePage}).
+One such website currently facing server scaling problems is \textsf{www.iFixit.com}, a moderately sized website that is ``the free repair manual that you can edit''\cite{ifixitDotCom} (Figure~\ref{fig:iFixitHomePage}).
 \textsf{iFixit}'s step-by-step guides and question-and-answer platform are driven largely by user-generated content.
 All repair guides on \textsf{iFixit} are publicly editable and contain rich revision history.
 Consequently, all of the content is stored in a database that must be queried in order to respond to requests for data.
@@ -164,19 +162,16 @@ However, since the caching strategy used is an ad hoc one, the effectiveness of 
 
 This thesis investigates web application caching techniques in the context of \textsf{iFixit}.
 We focus on reducing page response time and server load by caching the results of database queries and HTML rendering.
-
 Our work makes the following contributions:
 
 \begin{enumerate}
    \item A survey of existing caching solutions applicable to web applications
-   \item An in-depth description of implementing an adapted caching solution in \textsf{iFixit}'s code base
-   % TODO: Specify generational caching here? And maybe provide background on what it is before this?
-   % TODO: Include this? -- \item Provide a better understanding of when different caching strategies apply to certain situations, types of data, and access patterns.
+   \item An in-depth description of implementing an adapted generational caching solution in \textsf{iFixit}'s code base
    \item An analysis of performance improvements by running experiments using real-world traffic
 \end{enumerate}
 
 The rest of this thesis is organized as follows.
-Chapter \ref{background} provides background on caching and outlines related work, chapter \ref{designAndImplementation} describes the design and implementation of the caching system implemented in \textsf{iFixit}'s code base, chapter \ref{validation} validates our work, and chapter \ref{conclusions} concludes.
+Chapter~\ref{background} provides background on caching and outlines related work, Chapter~\ref{designAndImplementation} describes the design and implementation of the caching system implemented in \textsf{iFixit}'s code base, Chapter~\ref{validation} validates our work, and Chapter~\ref{conclusion} concludes.
 
 
 \chapter{Background} \label{background}
@@ -185,16 +180,16 @@ At a high level, a cache is used to store results of operations so future reques
 A cache is typically not the primary storage location for data.
 In most cases there is a permanent backing store such as a database which is used to retrieve information and populate the cache.
 A cache entry is a single piece of data stored in the cache that can be uniquely identified.
-A cache hit occurs when the requested cache entry is in the cache and no further action is required.
-A cache miss occurs when the requested cache entry is not in the cache and it must be retrieved from its primary location.
+A cache hit occurs when the requested cache entry is in the cache and the value can be used by the caller immediately.
+A cache miss occurs when the requested cache entry is not in the cache and the caller must retrieve it from its primary location.
 
 Caching is effective because cache lookups are much faster than retrieving data from its persistent location.
 Additionally, caching exploits locality.
 Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
 Spatial locality is the idea that items in nearby storage locations are referenced in close proximity to one another.
-As of late, spatial locality has been broadened for web sites to include access patterns such as recommended and related content.
+As of late, spatial locality has been broadened for websites to include access patterns such as recommended and related content.
 
-Caches can be of the static or dynamic type.
+Caches can be either static or dynamic.
 A static cache is one that is not updated as a result of the application running.
 The application can request data from the cache but it cannot add, modify, or remove cache entries.
 However, the cache is periodically updated outside of the application to keep it mostly up to date.
@@ -214,7 +209,7 @@ One such method is to perform cache invalidation upon data modification which re
 A cache stampede can occur when a cache that is frequently requested is invalidated.
 There are then a series of cache misses followed by a series of duplicated requests to the backing store followed by a series of cache sets.
 These should be avoided if possible because of the redundant work done by each request.
-If not handled properly, a single cache stampede can crash web sites.
+If not handled properly, a single cache stampede can crash websites.
 
 Database tables can specify a primary key which declares which columns of the table must have unique values for all tuples stored in the table.
 Primary keys are useful for uniquely identifying tuples because {\tt SELECT} queries for explicit values of the primary key return at most one record.
@@ -223,30 +218,36 @@ The ActiveRecord pattern is a common technique used in web applications to inter
 In the host language, the developer creates classes that represent tables in the database.
 This becomes an object-relational mapping (ORM) in that the properties of the class represent columns in the database.
 Rows can be inserted, updated, and removed by calling the {\tt insert}, {\tt update}, {\tt delete} methods on the object, respectively.
-This is demonstrated in Figure \ref{fig:activeRecordExample}.
+This is demonstrated in Figure~\ref{fig:activeRecordExample}.
 
 \begin{figure}[h]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
+class User extends ActiveRecord {
+   public $userid;
+   public $name;
+   public $email;
+}
+
 function createUser($userid, $name, $email) {
-   $user = new User();
-   $user->userid = $userid;
-   $user->name = $name;
-   $user->email = $email;
-   $user->insert();
-   return $user;
+  $user = new User();
+  $user->userid = $userid;
+  $user->name = $name;
+  $user->email = $email;
+  $user->insert();
+  return $user;
 }
 
 function getUser($userid) {
-   $user = User::find($userid);
-   return $user;
+  $user = User::find($userid);
+  return $user;
 }
 ?>
 \end{minted}
-\end{ssp}
-\caption{Basic ActiveRecord example.}
+\caption{Basic ActiveRecord example}
 \label{fig:activeRecordExample}
+\end{ssp}
 \end{figure}
 
 In this example, {\tt User} is a class that implements the ActiveRecord pattern.
@@ -257,7 +258,7 @@ This {\tt User} can later be retrieved by calling {\tt find}.
 \section{iFixit}
 
 \subsection{Data and Site Usage}
-\textsf{iFixit}'s most popular content is their step-by-step repair guides, an example of which can be seen in Figure \ref{fig:iFixitGuideExample}.
+\textsf{iFixit}'s most popular content is their step-by-step repair guides, an example of which can be seen in Figure~\ref{fig:iFixitGuideExample}.
 An \textsf{iFixit} guide consists of an ordered list of steps as well as meta data about the guide such as title, summary, parts, and tools.
 Each step consists of a list of bullet points with text, indentation, and color as well some sort of media such as a list of images or a video.
 To avoid duplicating content, guides can also be included in other guides as prerequisites.
@@ -268,6 +269,37 @@ The guide is displayed to the user with its prerequisite guides' steps before th
 \includegraphics[width=\textwidth,height=0.95\textheight]{assets/iFixitGuideExample.png}
 \caption{Example iFixit guide}
 \label{fig:iFixitGuideExample}
+\end{figure}
+
+Most guide fields, such as introduction, conclusion, and step bullets, contain \textit{wiki text}.
+This text is parsed and rendered into HTML before being returned to the user.
+An example of this transformation can be seen in Figure~\ref{fig:wikiTextTransformation}.
+
+\begin{figure}[hbtp]
+\begin{subfigure}[b]{1.0\textwidth}
+\begin{ssp}
+\begin{minted}[frame=lines]{html}
+This is '''a lot easier''' than opening the [guide|1158|iPod touch].
+\end{minted}
+\caption{Raw wiki text}
+\label{fig:wikiTextTransformationRaw}
+\end{ssp}
+\end{subfigure}
+
+\vspace{2em}
+\begin{subfigure}[b]{1.0\textwidth}
+\begin{ssp}
+\begin{minted}[frame=lines]{html}
+<p>This is <strong>a lot easier</strong> than opening the
+<a href="/Teardown/iPod+Touch+Teardown/1158/1">iPod touch</a>.</p>
+\end{minted}
+\caption{Rendered wiki text}
+\label{fig:wikiTextTransformationRendered}
+\end{ssp}
+\end{subfigure}
+
+\caption{Example wiki text transformation}
+\label{fig:wikiTextTransformation}
 \end{figure}
 
 All of \textsf{iFixit}'s content is dynamic which means that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
@@ -290,12 +322,13 @@ Sharding the data between multiple database machines to distribute the load is a
 However, consistency and race conditions become major issues that must be addressed.
 
 \subsection{Web Architecture}
-In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure \ref{fig:iFixitArchitecture}, at the time of this writing.
+In this section we describe \textsf{iFixit}'s production architecture, depicted in Figure~\ref{fig:iFixitArchitecture}, at the time of this writing.
 All of \textsf{iFixit}'s traffic goes directly to a load balancer which selects an application machine to handle the request.
-At any given time there are four to eight application machines that run \textsf{iFixit}'s core software which is written in PHP.
+At any given time there are four to eight application machines that run \textsf{iFixit}'s core software which is written in PHP\@.
 They get all of their data from one master database machine running the Percona build of \textsf{MySQL} which handles all reads and writes.
 There is also one slave database machine that is asynchronously replicated from the master database using \textsf{MySQL}'s built in replication.
-However, this machine is used purely as a backup and is not used to improve performance.
+However, this machine is used purely as a backup and does not improve the website's performance.
+All application machines access a single \textsf{Memcached} instance with 4GB of space available.
 
 All of this is built using Amazon Web Services (AWS) including Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront, a Content Delivery Network (CDN), for serving content out of S3, and Elastic Block Store (EBS) for raw block storage on each server instance.
 
@@ -311,7 +344,8 @@ All of this is built using Amazon Web Services (AWS) including Elastic Cloud Com
 \textsf{iFixit} currently has a very ad hoc approach to caching.
 Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
 If the object is not in the cache, it is retrieved from the database and stored in the cache for later use.
-The expiration time is typically on the order of minutes to hours depending on the method of invalidation for the data in question.
+The expiration time is typically on the order of minutes to days depending on the method of invalidation for the data in question.
+To reduce the risk of cache stampedes, expiration times are varied by \textit{10\%} so groups of keys don't expire at the same time.
 \textsf{iFixit} uses two strategies for cache invalidation that are described below.
 
 The first strategy relies on the cache entry's expiration time to update it with fresh data.
@@ -323,6 +357,20 @@ The second strategy used by \textsf{iFixit} involves deleting cache entries when
 It is up to the developer to find the appropriate places to delete cache entries when certain events occur.
 The advantages to this approach are that it's simple to understand, straightforward to implement, and ensures that fresh data is served if done correctly.
 
+\subsubsection{Guides}
+Currently, a database query is always performed to get the main guide data when looking up objects in the ORM\@.
+However, all other data, such as steps, prerequisites, parts, and tools, is cached as one value for 24 hours.
+This results in a single database query and a single \textsf{Memcached} {\tt get} to retrieve a cached guide.
+More database queries and \textsf{Memcached} calls are performed to render HTML and retrieve prerequisite guides and non-guide content such as support questions.
+
+Rendering HTML for a guide view page can be very costly because guides have 10's to 100's of wiki text fields that must be rendered.
+Wiki parsing and rendering is expensive because it involves lots of regular expressions, text manipulation, and sometimes database queries to retrieve other content to include in the HTML\@.
+To mitigate this, rendered wiki text is cached using an {\tt md5} hash of the raw wiki text as the cache key.
+Even if all rendered wiki text for a guide is cached, there is a large overhead associated with sequential \textsf{Memcached} calls.
+To reduce this overhead, all rendered guide step bullet wiki text is retrieved with one \textsf{Memcached} {\tt getMulti} call prior to rendering HTML\@.
+Any misses are {\tt set} in the cache once the wiki text is rendered during HTML generation.
+
+\subsubsection{Drawbacks}
 There are two major problems with these techniques.
 The first is that the burden of cache invalidation is on the developer.
 This is because the developer must decide what data to cache and spend time finding all the places where the cache entries should be invalidated.
@@ -334,19 +382,18 @@ This is especially true for fragments of HTML because the cache entries are typi
 In general, the difficulty of cache invalidation for any given datum is proportional to the number of cache entries dependent on that datum and how fine-grained those cache entries are.
 As a result, \textsf{iFixit} doesn't currently cache any HTML fragments.
 
-Our caching strategy aims to solve these two problems by providing a means for caching HTML and making cache invalidation happen automatically when the underlying data has changed.
+Our caching strategy aims to solve these problems by extending cache expiration times, providing a means for caching HTML, and making cache invalidation happen automatically when the underlying data has changed.
 
 \section{Related Work}
 \subsection{Research Challenges}
-Most research is focused on addressing two core challenges of caching: cache coherency and ease of use.
+Most research is focused on addressing two core challenges of caching: cache coherency and ease-of-use.
 In some cases, maintaining cache coherency is trivial because there is only one cache entry associated with the underlying data.
-However, with more complex data the situation is much more difficult.
+However, with more complex data the situation is much more challenging.
 There may be dependencies between objects which means that multiple cache entries need to be invalidated at the same time.
 To further complicate things, the dependencies between objects may be dynamic and must be resolved at run time on a per object basis.
 This is very common for Web 2.0 sites that are driven by user-generated content.
 
-The second core caching challenge is ease-of-use.
-The problem is that manually controlling the cache is tedious and error-prone.
+The problem ease-of-use addresses is that manually controlling the cache is tedious and error-prone.
 Leaving it up to the application developer to correctly {\tt get}, {\tt set}, and {\tt delete} cache entries results in an ad hoc caching strategy.
 Most research regarding ease-of-use focuses on developing a system that transparently handles all caching operations.
 This leaves the developer to write application-specific code instead of caching boilerplate.
@@ -385,7 +432,8 @@ Other projects have used database triggers with similar results \cite{scalableCo
 Write-through caching is a technique that involves saving the data in the cache at the same time as it is being saved in the persistent store \cite{writeThroughCaching}.
 This technique improves cache hit rate because cache misses will only happen as a result of cache entry eviction or server failure.
 However, this technique only works for simple data types.
-Any other objects that depend on the current object being saved can't be updated in the cache because that data isn't directly accessible and will require a database lookup.
+Any other objects that depend on the current object being saved can't be updated in the cache because that data isn't directly accessible.
+Those values must be prefetched and set in the cache or the relevant cache entries must be invalidated to regenerate the values upon next request in a non-write-through manner.
 
 \subsubsection{Generational Caching}
 Another caching technique is referred to as key-based cache expiration \cite{keyBasedCacheExpiration} and generational caching \cite{generationalCaching}.
@@ -414,16 +462,17 @@ The website for the 1998 Winter Olympic games deployed this caching technique an
 Their system uses a dependency graph to determine which cache entries need to be updated when any given data is modified \cite{scalableConsistentCaching}.
 When an object is updated, all of the cache entries that have an edge with that object need to be prefetched along with the original object.
 
+\subsubsection{Expiration Times}
 Cambazoglu, Junqueira, and Plachouras use the cache expiration time to invalidate cache entries \cite{refreshingPerspectiveSearch}.
 The idea is that serving slightly stale data isn't terrible for search engines.
 Additionally, the rate of change can be determined for a given query and can be factored into the expiration time.
 This allows frequently changing data to have a shorter time to live and infrequently changing data to have a longer time to live.
 
 \subsection{Determining what to cache}
-Some research has been done trying to determine what data is the most useful to cache.
+Some research has been done trying to determine what data, when cached, improves cache hit rate the most.
 Many sources propose that fragments of HTML are most useful because a cache hit for HTML allows the server to avoid generating the HTML as well as retrieving the underlying data from the persistent store \cite{comparisonOfCachingSolutions, scalableConsistentCaching, howBasecampGotSoFast}.
 
-Baeza-Yates et al. suggested that enforcing cache admission policies is a valuable way to improve hit ratio \cite{cacheAdmissionPolicies}.
+Baeza-Yates et al.\ suggested that enforcing cache admission policies is a valuable way to improve hit ratio \cite{cacheAdmissionPolicies}.
 The driving idea behind it is that there are many singleton queries (queries that are run only once) that pollute the cache because they are not used again.
 Detecting such queries and leaving them out of the cache leaves more room for caching results of frequently accessed queries thus increasing cache hit ratio.
 However, Cambazoglu, Junqueira, and Plachouras claim that the eviction policy doesn't have a significant impact on cache hit ratio because caches can easily be expanded to hold more entries and therefore evictions are rare \cite{refreshingPerspectiveSearch}.
@@ -442,12 +491,12 @@ All \textsf{Memcached} operations are constant time ({\tt O(1)}) with respect to
 
 There are three ways for cached data to be removed from \textsf{Memcached}.
 The expire time the data was set with determines the maximum lifespan of the cache entry for which it is valid.
-Once the data has expired it is no longer returned for {\tt get} requests although the data is not immediately removed from memory.
+Once the data has expired it is no longer returned for {\tt get} requests.
 Before data has expired, however, items can be evicted due to memory pressure.
-This occurs when new items are being added to the cache and there isn't any room.
+This occurs when new items are being added to the cache and there isn't any available space.
 Expired items are evicted first if any are found, otherwise the Least Recently Used (LRU) policy is used to select a cache entry to evict.
 In other words, the cache entry that has last been referenced the longest ago is evicted.
-Finally, cache entries can also be removed by performing {\tt delete} requests and providing the key that identifies the data to be deleted.
+Finally, cache entries can also be removed by performing {\tt delete} requests with the cache entry's cache key.
 
 To reduce the effects of memory fragmentation, \textsf{Memcached} employs a technique called slab allocation.
 The total memory available to \textsf{Memcached} is partitioned into 1MB pages.
@@ -464,86 +513,94 @@ Keys map to exactly one server so the total memory available in the \textsf{Memc
 The client library performs consistent hashing\cite{consistentHashing} on any key lookups to determine which server in the cluster to send the request to.
 The result is that adding and removing servers doesn't drastically impact hit rate because the majority of keys map to the same servers before and after the change.
 
+For these reasons, \textsf{Memcached} is well-suited for web application caching.
+All of its operations are constant-time and are distributed amongst all nodes in the cluster.
+The result is that \textsf{Memcached} calls can scale much better than database queries.
+Ultimately, websites can cache expensive operations using \textsf{Memcached} to improve performance by decreasing page response time and server load.
+
 
 \chapter{Design and Implementation} \label{designAndImplementation}
-In this chapter, we explain in depth the caching solution we implemented for \textsf{iFixit} and analyze in Chapter \ref{validation}.
+In this chapter, we explain in depth the caching solution we implemented for \textsf{iFixit} and analyze in Chapter~\ref{validation}.
 But first, we must reiterate \textsf{iFixit}'s requirements for such a caching solution.
 
 \begin{description}
    \item[R1] The caching strategy must be largely transparent to the developer.
-             The developer should only be required to determine what data to cache, not how to cache it and how to invalidate it.
+             The developer should only be required to determine what data to cache, not how to cache the data and how to invalidate the cache entries.
    \item[R2] The caching strategy must allow for finer-grained caching without added complexity.
-   \item[R3] The caching strategy must provide a means of caching and invalidating fragments of HTML.
-   \item[R4] The caching strategy must result in increased performance in regards to response time and database load. % TODO: Not database load because it's hard to measure? Or it isn't since query count/exec time is good? Be more specific?
+   \item[R3] The caching strategy must provide a means of caching and invalidating fragments of HTML\@.
+   \item[R4] The caching strategy must result in increased performance in regards to response time and database load.
 \end{description}
 
 The rest of this chapter is organized as follows.
-In section 3.1 we explain the high-level design of the caching strategy implemented for \textsf{iFixit}.
-In section 3.2 we go over the details of implementing the design in \textsf{iFixit}'s code base.
+In Section~\ref{design} we explain the high-level design of the caching strategy implemented for \textsf{iFixit}.
+In Section~\ref{implementation} we go over the details of implementing the design in \textsf{iFixit}'s code base.
 
-\section{Design}
+\section{Design} \label{design}
 Out of existing solutions, generational caching most closely meets these requirements because the cache key changes whenever the underlying data changes, so cache entries no longer need to be explicitly invalidated.
 This allows there to be many cache entries that depend on a single piece of data and the values will not need to be invalidated.
 For these reasons, we used generational caching concepts as a starting point for our caching solution.
 
 \subsection{What is being cached}
 This section describes the three primary types of data that are cached in our caching strategy.
-The first data type is objects constructed from query results that represent a tuple in the database (see Figure \ref{fig:ormObject}).
+The first data type is objects constructed from query results that represent a tuple in the database (see Figure~\ref{fig:ormObject}).
 These are used as an ORM which can make modifications to the database as well as retrieve data for consumption.
-The second data type is fragments of HTML generated in templates like the one depicted in Figure \ref{fig:htmlTemplate}.
+The second data type is fragments of HTML generated in templates like the one depicted in Figure~\ref{fig:htmlTemplate}.
 These typically produce output based on data retrieved from the database and need to be invalidated anytime that data has changed.
-Finally, results of ad hoc queries, like the one in Figure \ref{fig:adHocQuery}, are also cached.
+Finally, results of ad hoc queries, like the one in Figure~\ref{fig:adHocQuery}, are also cached.
 These typically are used in addition to the ORM to gather more complex data.
 
 \begin{figure}[hbtp]
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
 class Guide extends ORMObject {
-   private $guideid;
-   private $langid;
-   private $title;
-   private $difficulty;
-   private $steps;
+  private $guideid;
+  private $langid;
+  private $title;
+  private $difficulty;
+  private $steps;
 }
 ?>
 \end{minted}
-\end{ssp}
 \caption{ORM Object}
 \label{fig:ormObject}
+\end{ssp}
 \end{subfigure}
 
+\vspace{2em}
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <div class="guide">
-   <h3><?= $guide->title ?></h3>
-   <p>Difficulty: <?= $guide->difficulty ?></p>
-   <div class="steps">
-   <? foreach ($guide->steps as $step): ?>
-      <div class="step">
-         <?= $step->title ?>
-      </div>
-   <? endforeach ?>
-   </div>
+  <h3><?= $guide->title ?></h3>
+  <p>Difficulty: <?= $guide->difficulty ?></p>
+  <div class="steps">
+  <? foreach ($guide->steps as $step): ?>
+    <div class="step">
+      <?= $step->title ?>
+      <? /* Step bullet HTML generation. */ ?>
+    </div>
+  <? endforeach ?>
+  </div>
 </div>
 \end{minted}
-\end{ssp}
 \caption{HTML template}
 \label{fig:htmlTemplate}
+\end{ssp}
 \end{subfigure}
 
+\vspace{2em}
 \begin{subfigure}[b]{1.0\textwidth}
 \begin{ssp}
-\begin{minted}{sql}
+\begin{minted}[frame=lines]{sql}
 SELECT guideid, langid
 FROM guide_prereqs
 WHERE prereq_guideid = ? AND prereq_langid = ?
 \end{minted}
-\end{ssp}
 \caption{Ad hoc query}
 \label{fig:adHocQuery}
+\end{ssp}
 \end{subfigure}
 
 \caption{Data types being cached}
@@ -552,7 +609,68 @@ WHERE prereq_guideid = ? AND prereq_langid = ?
 
 \subsection{Caching Approach}
 We will first discuss how we incorporate caching into our ORM and how it is used for \textsf{iFixit}'s guides.
-The guide and step ORM objects can be found in Figure \ref{fig:cachingExample}.
+The guide and step ORM objects can be found in Figure~\ref{fig:cachingExample}.
+
+\begin{figure}[h]
+\begin{subfigure}[h]{0.5\textwidth}
+\begin{ssp}
+\begin{minted}[frame=lines]{php}
+<?php
+class Guide extends ORMObject {
+  protected static $cacheCols =
+   ['modified_date'];
+
+  // Primary key.
+  protected $guideid;
+  protected $langid;
+
+  // Columns from guide table.
+  protected $title;
+  protected $difficulty;
+  protected $modified_date;
+  protected $revisionid;
+
+  // From other tables.
+  protected $steps;
+  protected $parts;
+}
+?>
+\end{minted}
+\caption{Guide ORM object}
+\label{fig:guideORMTable}
+\end{ssp}
+\end{subfigure}
+\begin{subfigure}[h]{0.5\textwidth}
+\begin{ssp}
+\begin{minted}[frame=lines]{php}
+<?php
+class Step extends ORMObject {
+  protected static $cacheCols =
+   ['revisionid'];
+
+  // Primary key.
+  private $stepid;
+
+  // Columns from step table.
+  private $guideid;
+  private $langid;
+  private $title;
+  private $orderby;
+  private $revisionid;
+
+  // From other tables.
+  private $media;
+  private $lines;
+}
+?>
+\end{minted}
+\caption{Step ORM object}
+\label{fig:stepORMObject}
+\end{ssp}
+\end{subfigure}
+\caption{Example guide and step ORM objects}
+\label{fig:cachingExample}
+\end{figure}
 
 The primary key of a database table can be used with the ORM to select a single record.
 Once the record is loaded, other data not contained in the primary table is loaded and then the entire object is cached.
@@ -582,7 +700,7 @@ Fortunately, the primary table tuple has already been fetched from the database 
 
 This strategy works especially well when retrieving an object's additional data is very expensive.
 If no additional data is loaded then the ``fully loaded'' object is the exact same as the one fetched when gathering more data to construct the cache key.
-In this case there is no benefit to using generational caching because the data cached by the primary key is the same as the data cached with the full set of columns.
+In this case there is no benefit to using generational caching for retrieving the ORM object because the data cached by the primary key is the same as the data cached with the full set of columns.
 However, the additional columns can be used in cache keys for data that depends on it to avoid cache invalidation.
 The amount of extra data loaded in addition to the primary table to make the overhead of generational caching worthwhile varies on a case-by-case basis.
 This approach is effective for {\tt Guide}s because there is a large amount of additional data to retrieve.
@@ -598,69 +716,8 @@ For example, {\tt Step}s' {\tt revisionids} are updated every time they are modi
 However, the step number displayed to the user can be different for the same step on different guides because of the order of prerequisite guides.
 Rather than including the step number in the cache key, a placeholder value is used in place of the step number, which is replaced with the actual step number before it is output to the user.
 
-\begin{figure}[h]
-\begin{subfigure}[h]{0.5\textwidth}
-\begin{ssp}
-\begin{minted}{php}
-<?php
-class Guide extends ORMObject {
-   protected static $cacheCols =
-    ['modified_date'];
 
-   // Primary key.
-   protected $guideid;
-   protected $langid;
-
-   // Columns from guide table.
-   protected $title;
-   protected $difficulty;
-   protected $modified_date;
-   protected $revisionid;
-
-   // Retrieved from other tables.
-   protected $steps;
-   protected $parts;
-}
-?>
-\end{minted}
-\end{ssp}
-\caption{Guide ORM object}
-\label{fig:guideORMTable}
-\end{subfigure}
-\begin{subfigure}[h]{0.5\textwidth}
-\begin{ssp}
-\begin{minted}{php}
-<?php
-class Step extends ORMObject {
-   protected static $cacheCols =
-    ['revisionid'];
-
-   // Primary key.
-   private $stepid;
-
-   // Columns from step table.
-   private $guideid;
-   private $langid;
-   private $title;
-   private $orderby;
-   private $revisionid;
-
-   // Retrieved from other tables.
-   private $media;
-   private $lines;
-}
-?>
-\end{minted}
-\end{ssp}
-\caption{Step ORM object}
-\label{fig:stepORMObject}
-\end{subfigure}
-\caption{Example guide and step ORM objects}
-\label{fig:cachingExample}
-\end{figure}
-
-
-\section{Implementation}
+\section{Implementation} \label{implementation}
 \subsection{Existing Infrastructure}
 Before we can go into the details of the implementation of generational caching, some background on \textsf{iFixit}'s existing code must be presented.
 Most data is retrieved using a custom ORM that was built in-house.
@@ -682,11 +739,12 @@ Otherwise, all other relevant data would be loaded which is exactly what the fir
 The recursive call constructs a cache key using only the primary key to avoid infinite recursion.
 
 The \textsf{Memcached} operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential \textsf{Memcached} {\tt get}s.
-All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query and are cached for later use.
+All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
+The object is cached for later use once all relevant data from other tables has been retrieved.
 
 \subsection{Caching HTML and Ad Hoc Queries}
 We also cache fragments of HTML because HTML generation can be fairly slow and unperforming.
-This is demonstrated for an example guide in Figure \ref{fig:annotatedCachedGuidePage}.
+An annotated example guide demonstrating this can be seen in Figure~\ref{fig:annotatedCachedGuidePage}.
 To help facilitate this, we implemented a few different caching functions for use in HTML templates.
 
 \begin{figure}[hbtp]
@@ -696,124 +754,125 @@ To help facilitate this, we implemented a few different caching functions for us
 \label{fig:annotatedCachedGuidePage}
 \end{figure}
 
-The first set of functions is {\tt cacheStart} and {\tt cacheEnd} which are used for caching a single block of HTML.
-{\tt cacheStart} accepts either an object that has a {\tt cacheKey} method (e.g. an ORM object) or a string cache key.
+The first set of functions is {\tt cacheStart} and {\tt cacheEnd} which are used for caching a single block of HTML\@.
+{\tt cacheStart} accepts either an ORM object or a string cache key.
 Another string is supplied that is added to the cache key to differentiate this fragment of HTML from other fragments constructed from the same object.
 If the HTML was found in the cache it is output to {\tt stdout} and {\tt cacheStart} returns {\tt true}.
 Otherwise output buffering is started to capture the HTML that is generated when running the template code and {\tt cacheStart} returns {\tt false}.
 A call to {\tt cacheEnd} signals the end of the cached HTML section.
 This function closes output buffering, gets the contents of the buffer, caches it, and finally outputs the HTML to {\tt stdout}.
-A basic example is shown in Figure \ref{fig:cacheStartExample}.
+A basic example is shown in Figure~\ref{fig:cacheStartExample}.
 
 \begin{figure}[h]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <? if (!cacheStart($guide, 'view-all', CACHE_FOREVER)): ?>
-   <div class="guide">
-      <h3><?= $guide->title ?></h3>
-      <p>Difficulty: <?= $guide->difficulty ?></p>
-      <? /* Step HTML generation. */ ?>
-   </div>
+  <div class="guide">
+    <h3><?= $guide->title ?></h3>
+    <p>Difficulty: <?= $guide->difficulty ?></p>
+    <? /* Step HTML generation. */ ?>
+  </div>
 <? cacheEnd(); endif ?>
 \end{minted}
-\end{ssp}
 \caption{Example usage of cacheStart and cacheEnd}
 \label{fig:cacheStartExample}
+\end{ssp}
 \end{figure}
 
 \begin{figure}[hbtp]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
 function batchCache($cacheKeys, $where, $expire,
  $renderFunction) {
-   $templateCacheKeys = [];
-   foreach ($cacheKeys as $key => $ormObject) {
-      $templateCacheKeys["$key-$where"] = $ormObject;
-   }
+  $templateCacheKeys = [];
+  foreach ($cacheKeys as $key => $ormObject) {
+    $templateCacheKeys["$key-$where"] = $ormObject;
+  }
 
-   $allHtml = cacheGetMulti($templateCacheKeys, $expire,
-      function($missing) use ($renderFunction) {
-         $found = [];
+  $allHtml = cacheGetMulti($templateCacheKeys, $expire,
+    function($missing) use ($renderFunction) {
+      $found = [];
 
-         foreach ($missing as $cacheKey => $ormObject) {
-            ob_start(); {
-               $renderFunction($ormObject);
-               $html = ob_get_contents();
-            } ob_end_clean();
+      foreach ($missing as $cacheKey => $ormObject) {
+        ob_start(); {
+          $renderFunction($ormObject);
+          $html = ob_get_contents();
+        } ob_end_clean();
 
-            $found[$cacheKey] = $html;
-         }
-
-         return $found;
+        $found[$cacheKey] = $html;
       }
-   );
 
-   foreach ($allHtml as $html) {
-      echo $html;
-   }
+      return $found;
+    }
+  );
+
+  foreach ($allHtml as $html) {
+    echo $html;
+  }
 }
 ?>
 \end{minted}
-\end{ssp}
 \caption{Implementation of batchCache}
 \label{fig:batchCacheImplementation}
+\end{ssp}
 \end{figure}
 
-The second caching function we wrote is {\tt batchCache} which is designed for caching multiple fragments of HTML.
-The most common use case for it is rendering a list of objects one after the other e.g. search results.
+The second caching function we wrote is {\tt batchCache} which is designed for caching multiple fragments of HTML\@.
+The most common use case for it is rendering a list of objects one after the other e.g.\ search results.
 {\tt batchCache} is better than {\tt cacheStart} and {\tt cacheEnd} for this circumstance because of the network overhead for sequential \textsf{Memcached} calls.
 This is especially true for fragments of HTML whose generation time is close to or less than the average time of a \textsf{Memcached} {\tt get}.
 {\tt batchCache} minimizes network overhead by using \textsf{Memcached}'s {\tt getMulti} operation.
 
-The implementation of {\tt batchCache} is depicted in Figure \ref{fig:batchCacheImplementation}.
+The implementation of {\tt batchCache} is depicted in Figure~\ref{fig:batchCacheImplementation}.
 {\tt batchCache} accepts an array of ORM objects and, much like {\tt cacheStart}, an additional string to differentiate these cache entries from others constructed from the same objects.
 {\tt batchCache} calls {\tt cacheGetMulti} with the cache keys returned by the provided objects' {\tt cacheKey} methods.
 For each cache miss, output buffering is started and the supplied rendering function is called with the ORM object.
 Output buffering is then closed and the resulting HTML is returned to {\tt cacheGetMulti} which stores it in the cache.
 Once all the HTML has been generated, {\tt cacheGetMulti} returns the HTML fragments in the same order that the cache keys were provided.
 Finally, every fragment of HTML is output to {\tt stdout} in the same order that their corresponding objects were provided.
-This is demonstrated for {\tt Step}s in Figure \ref{fig:batchCacheStep}, which is the cached steps version of Figure \ref{fig:htmlTemplate}.
+This is demonstrated for {\tt Step}s in Figure~\ref{fig:batchCacheStep}, which is the cached steps version of Figure~\ref{fig:htmlTemplate}.
 
 \begin{figure}[h]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <div class="steps">
 <? batchCache($guide->steps, 'step_view', CACHE_FOREVER,
     function($step) { ?>
    <div class="step">
-      <?= $step->title ?>
+     <?= $step->title ?>
+     <? /* Step bullet HTML generation. */ ?>
    </div>
 <? }); ?>
 </div>
 \end{minted}
-\end{ssp}
 \caption{Example usage of batchCache for Steps}
 \label{fig:batchCacheStep}
+\end{ssp}
 \end{figure}
 
 The same approach can be applied to caching ad hoc query results.
-Figure \ref{fig:adHocQueryCaching} demonstrates this by using {\tt cacheGetAndSet}.
+Figure~\ref{fig:adHocQueryCaching} demonstrates this by using {\tt cacheGetAndSet}.
 The cache key is constructed using the guide's full cache key and the string {\tt -prereqs}, so it will be invalidated when the guide is modified.
 If the value is not cached, {\tt cacheGetAndSet} calls the provided function and caches the result.
 
 \begin{figure}[h]
 \begin{ssp}
-\begin{minted}{php}
+\begin{minted}[frame=lines]{php}
 <?php
 $cacheKey = $guide->cacheKey() . "-prereqs";
 $prereqs = cacheGetAndSet($cacheKey, function() use ($guide) {
-   return dbQuery("
-      SELECT guideid, langid
-      FROM guide_prereqs
-      WHERE prereq_guideid = ? AND prereq_langid = ?",
-    [$guide->guideid, $guide->langid]);
+  return dbQuery("
+    SELECT guideid, langid
+    FROM guide_prereqs
+    WHERE prereq_guideid = ? AND prereq_langid = ?",
+   [$guide->guideid, $guide->langid]);
 });
 ?>
 \end{minted}
-\end{ssp}
 \caption{Ad hoc query caching}
 \label{fig:adHocQueryCaching}
+\end{ssp}
 \end{figure}
 
 
@@ -829,11 +888,11 @@ The second data set is traffic during \textsf{iFixit}'s Samsung Galaxy S4 Teardo
 Since our caching strategy was only applied to guides, the request logs are filtered to only include requests viewing or modifying guides.
 Otherwise, the results would be affected by other non-guide requests which are not using our generational caching method.
 
-The test environment, depicted in Figure \ref{fig:experimentalArchitecture}, is an isolated clone of \textsf{iFixit}'s production architecture consisting of a load balancer, two application machines, and a database machine.
+The test environment, depicted in Figure~\ref{fig:experimentalArchitecture}, is an isolated clone of \textsf{iFixit}'s production architecture consisting of a load balancer, two application machines, and a database machine.
 Since the traffic replays are a subset of \textsf{iFixit}'s traffic, two application machines are more than enough to handle the load.
 All machines are AWS EC2 nodes running 64-bit CentOS 5.4.
 The load balancer is a {\tt m1.large} instance with 7.5 GiB memory and 4 EC2 Compute Units (2 virtual cores with 2 EC2 Compute Units each).
-This machine runs \textsf{Memcached} {\tt 1.4.15} which is used by the application machines.
+This machine runs \textsf{Memcached} {\tt 1.4.15} which is accessed from the application machines.
 The database machine is a {\tt m1.xlarge} instance with 15 GiB of memory and 8 EC2 Compute Units (4 virtual cores with 2 EC2 Compute Units each).
 This machine runs \textsf{MySQL} {\tt 5.5.29 Percona Server} with EBS-striped volumes.
 The application machines are {\tt c1.medium} instances with 1.7 GiB of memory and 5 EC2 Compute Units (2 virtual cores with 2.5 EC2 Compute Units each).
@@ -848,49 +907,198 @@ More information regarding EC2 specs can be found on AWS's website \cite{awsInst
 
 We then replay the requests in the 2 test sets with and without our caching strategy for a total of 4 runs.
 Requests are performed using a NodeJS script running on the load balancer making requests to {\tt localhost} to reduce latency between the simulated client and the web servers.
-Every request is profiled server-side --- \textsf{Memcached}, \textsf{MySQL}, and CPU usage statistics are recorded to the database.
+Every request records \textsf{Memcached}, \textsf{MySQL}, and various other statistics to the database.
 
 Before each experiment is run, the database is restored to the state it was in when the requests were originally made to \textsf{www.iFixit.com}.
 This ensures that the data is the same between runs and all views and edits are working with the same data.
 The stats logging table is truncated, so only requests during the experiment are in the table when the test is complete.
 Finally, \textsf{Memcached} is restarted, which empties its contents.
-
 The experiment is then run for the full 24 hours.
 Afterwards, the stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
 
 \section{Measured Values}
 The most general value we compare is \textit{page response time}, the total amount of time the request spent on our servers.
 Response time should decrease because more data is cached and can be returned faster than before.
-Similarly, \textit{HTML generation time} should decrease because fragments of HTML are now being cached.
+Similarly, \textit{HTML generation time} should decrease because fragments of HTML are now cached.
 
-The interesting values for \textsf{Memcached} stats are \textit{get count}, \textit{hit rate}, and \textit{time spent in cache calls}.
-The get count will likely increase because cache entries are finer-grained.
-Cache hit rate will vary drastically because pages with uncached content will have a large number of misses.
-However, pages with cached content will have either a few cache hits for a large amount of content or many cache hits for finer-grained content.
-In general, cache hit rate should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
-Time spent in \textsf{Memcached} calls will likely increase because more content is being cached.
+The interesting values for \textsf{Memcached} stats are \textit{get~count} and \textit{miss~count}.
+All of these values will vary drastically from page to page depending on whether or not the content is cached.
+Pages with uncached content will have a large number of misses while pages with cached content will have either a few cache hits for a large amount of content or many cache hits for finer-grained content.
+In general, \textsf{Memcached} misses should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
+Because of the large number of cache hits for rendered wiki text, \textit{cache~hit~rate} will be much higher for the control than our generational caching implementation.
+However, miss count is less biased once most content is cached which is why miss count is a more useful measurement.
 
-Finally, the interesting values for \textsf{MySQL} are \textit{query count} and \textit{total query time}.
+Finally, the interesting values for \textsf{MySQL} are \textit{query~count} and \textit{total~query~time}.
 Query count should go down because the cache should serve more requests that previously were handled by the database.
-Additionally, network overhead is reduuced because more content is retrieved in batch using fewer queries.
-Both of these should cause a decrease in total database query time.
+Additionally, network overhead is reduced because more content is retrieved in batch using fewer queries.
+For both of these reasons, a decrease in total database query time should be observed.
 
-\section{Hypothesis}
-% TODO: Write.
+\section{Results} \label{results}
+The following are results from the experiments outlined above.
+\textit{Teardown traffic} refers to the Galaxy S4 Teardown traffic starting right before the teardown was published while \textit{Normal traffic} refers to a standard day of traffic starting and ending at midnight.
+Figure~\ref{fig:requestsPerSecXTime} shows the requests per second over time for both data sets.
+The \textit{Control} data points are from the code that is currently running \textsf{www.iFixit.com} while the \textit{GC} data points are from our improvements using generational caching.
+All ``over time'' graphs are constructed from 15 minute groupings of requests for a total of 96 data points.
 
-\section{Results}
-% TODO: Write. Pretty much a raw data dump of stuff.
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{assets/requestsPerSecXTime.png}
+\caption{Requests per second over time for both data sets}
+\label{fig:requestsPerSecXTime}
+\end{figure}
+
+Various times for all experiments are shown in Table~\ref{tab:averageExperimentTimes}.
+As we expected, response, database query, and HTML render times decreased for our generational caching implementation.
+However, \textsf{Memcached} time has remained approximately the same.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{| l | l | l | l | l |}
+   \hline
+   Run & Response & Memcached & DB & HTML \\ \hline
+   Teardown Control & 236.33 & 78.26 & 67.56 & 59.95 \\ \hline
+   Teardown GC & 196.67 & 79.75 & 48.46 & 23.52 \\ \hline
+   \hline
+   Normal Control & 225.23 & 73.59 & 64.37 & 56.92 \\ \hline
+   Normal GC & 178.90 & 70.70 & 46.22 & 22.89 \\
+   \hline
+\end{tabular}
+\end{center}
+\caption{Average times for all experiments}
+\label{tab:averageExperimentTimes}
+\end{table}
+
+\textsf{Memcached} and database counts for all experiments are shown in Table~\ref{tab:averageExperimentCounts}.
+As we expected, \textsf{Memcached} misses and database queries have decreased for our generational caching implementation.
+However, \textsf{Memcached} gets and cache hit rate go down.
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{| l | l | l | l | l |}
+   \hline
+   Run & Memcached gets & Memcached misses & Cache hit rate & Queries \\ \hline
+   Teardown Control & 97.93 & 5.33 & 0.94 & 44.51 \\ \hline
+   Teardown GC & 37.52 & 4.99 & 0.86 & 32.35 \\ \hline
+   \hline
+   Normal Control & 88.23 & 6.37 & 0.92 & 46.48 \\ \hline
+   Normal GC & 39.78 & 5.98 & 0.84 & 33.02 \\
+   \hline
+\end{tabular}
+\end{center}
+\caption{Average counts for all experiments}
+\label{tab:averageExperimentCounts}
+\end{table}
+
+Figures~\ref{fig:teardownRespTimeXTime} and~\ref{fig:normalRespTimeXTime} show that average response time has decreased uniformly for our generational caching implementation.
+Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLRenderTimeXTime} show that HTML render time decreases quickly at the beginning and continues to decrease as time goes on.
+Equilibrium is reached much more quickly in the teardown traffic than the normal traffic.
+A similar phenomenon can be seen in \textsf{Memcached} miss count, shown in Figures~\ref{fig:teardownMissCountXTime} and~\ref{fig:normalMissCountXTime}.
+For the majority of the experiments, miss counts are remarkably similar between the control and our generational caching implementation.
+However, miss count for the control increases significantly at the last 2 to 3 hours of the experiment.
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/teardownRespTimeXTime.png}
+\caption{Teardown traffic response time}
+\label{fig:teardownRespTimeXTime}
+\end{figure}
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/normalRespTimeXTime.png}
+\caption{Normal traffic response time}
+\label{fig:normalRespTimeXTime}
+\end{figure}
+
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/teardownHTMLRenderTimeXTime.png}
+\caption{Teardown traffic HTML render time over time}
+\label{fig:teardownHTMLRenderTimeXTime}
+\end{figure}
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/normalHTMLRenderTimeXTime.png}
+\caption{Normal traffic HTML render time over time}
+\label{fig:normalHTMLRenderTimeXTime}
+\end{figure}
+
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/teardownMissCountXTime.png}
+\caption{Teardown traffic cache miss count over time}
+\label{fig:teardownMissCountXTime}
+\end{figure}
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/normalMissCountXTime.png}
+\caption{Normal traffic cache miss count over time}
+\label{fig:normalMissCountXTime}
+\end{figure}
 
 \section{Analysis}
-% TODO: Analyze results. Draw conclusions. Explain stuff.
+In general, measured values reach equilibrium much more quickly during teardown traffic because most of the requests are for the teardown which is fully cached.
+The normal traffic experiments request a larger breadth of content so a smaller percentage of requested content is cached.
+We can see in Table~\ref{tab:averageExperimentTimes} that the decreased response time is caused by the decreased database and HTML render times.
+In particular, the sum of the differences in database and HTML render times is roughly equal to the difference in response time.
+\textsf{Memcached} time varies because different content is cached between the two strategies and there are different numbers of {\tt get}s.
+Table~\ref{tab:averageExperimentCounts} shows that the decrease in number of queries is the cause of the observed decrease in query time.
+The number of queries decreased because the requested data is being retrieved from the cache rather than the database.
+
+Unfortunately, \textsf{Memcached} {\tt get}s are very skewed between the two strategies because of \textit{wiki text} rendering.
+The control experiment has a very large number of {\tt get}s because of the \textsf{Memcached} {\tt multiGet} call for rendered wiki text.
+Nearly all of these are cache hits which pull up the average hit rate.
+Caching HTML in our generational caching implementation eliminates the need for caching wiki text rendering which is why the \textsf{Memcached} {\tt get} count is so much lower.
+Similarly, cache hit rate decreases for the generational caching implementation because there are no longer a large number of cache hits for rendered wiki text.
+
+\textsf{Memcached} miss counts remain at nearly the same values between the control and generational caching runs for most of the experiment because the requested content is either cached or uncached in both experiments.
+The first few hours demonstrate how requesting uncached content affects misses because \textsf{Memcached} is flushed at the very beginning of the experiments.
+There are a large number of misses for the control because of the \textsf{Memcached} {\tt multiGet} call for rendered wiki text.
+Our generational caching implementation has a large number of misses because cache misses result in more cache {\tt get}s which are also misses.
+They diverge around hour 22 because most guide cache times are set to expire after 24 hours.
+Varying 24 hours by {\tt 10\%} means that cache entries will start to expire after about 22 hours.
+This doesn't occur in the generational caching implementation because cache entries aren't set to expire at all which results in a decreasing miss count over time.
+
+\subsection{Requirements}
+In this section we will determine whether or not our caching solution meets the requirements we set out in Chapter~\ref{designAndImplementation}.
+
+\begin{description}
+   \item[R1] The caching solution is largely transparent to the developer.
+             The developer uses the ORM object to construct cache keys and any cache entries using that object are invalidated when the underlying data changes.
+   \item[R2] The caching strategy allows for finer-grained caching without added complexity.
+             Since cache entries automatically expire anytime the underlying data changes, the number of cache entries dependent on a piece of data doesn't increase the complexity of cache invalidation.
+   \item[R3] The caching solution allows for caching and invalidating fragments of HTML\@.
+             This was done at a very granular level with guide steps and they were invalidated as necessary.
+   \item[R4] As we saw in Section~\ref{results}, response time, number of database queries, and database query time is reduced using our caching solution.
+\end{description}
+
+Since we met all the requirements outlined in Chapter~\ref{designAndImplementation}, our generational caching implementation is a success.
 
 
-\chapter{Conclusions and Future Work} \label{conclusions}
+\chapter{Conclusion} \label{conclusion}
+Website scaling has been and will continue to be a major issue for small to large web companies.
+A common solution to this problem, like many other areas of Computer Science, is some form of caching.
+Values that are expensive to generate, such as rendered HTML and database queries, can be cached so they can be retrieved much faster in subsequent requests.
+However, ease-of-development, fine-grained cache entries, and cache invalidation are in direct conflict with each other.
+In particular, cache invalidation becomes more difficult as the number of cache entries that must be invalidated increases.
+Unfortunately, this burden is typically put on the application developer.
 
-% TODO: Write.
+Generational caching is a technique that attempts to relieve the burden of cache invalidation even in situations with many dependent cache entries.
+The novel idea is that the cache key changes when the underlying data is updated, which is typically achieved by including the data's modified date in the cache key.
+All of the cache entries that depend on that data are effectively invalidated because they won't be referenced again.
+This results in the ability to perform fine-grained caching without forcing the developer to invalidate cache entries when data changes.
 
-\section{Future Work Ideas}
-How size of cache affects hit rate over long periods of time to evaluate if it's okay to not invalidate anything.
+We implemented generational caching for \textsf{iFixit}'s guides to find that this approach works remarkably well.
+% TODO: Update this value with fresh results.
+In particular, HTML generation time, number of database queries, and average response time decreased by 60\%, 27\%, and 18\%, respectively.
+Just as important, cache invalidation was transparent to the developer because the ORM handled the retrieval of data and generation of cache keys.
+We are eager to incorporate our generational caching solution into other areas of the site to simplify the implementation of caching and improve performance.
+
+
+% TODO: Write if we want future work.
+%\section{Future Work}
+%How size of cache affects hit rate over long periods of time to evaluate if it's okay to not invalidate anything.
 
 
 % ------------- End main chapters ----------------------
