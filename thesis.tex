@@ -743,6 +743,8 @@ The \textsf{Memcached} operations are performed using {\tt getMulti} to minimize
 All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
 The object is cached for later use once all relevant data from other tables has been retrieved.
 
+% TODO: Give example of what happens when a step is edited.
+
 \subsection{Caching HTML and Ad Hoc Queries}
 We also cache fragments of HTML because HTML generation can be fairly slow and unperforming.
 An annotated example guide demonstrating this can be seen in Figure~\ref{fig:annotatedCachedGuidePage}.
@@ -1097,10 +1099,22 @@ In particular, HTML generation time, number of database queries, and average res
 Just as important, cache invalidation was transparent to the developer because the ORM handled the retrieval of data and generation of cache keys.
 We are eager to incorporate our generational caching solution into other areas of the site to simplify the implementation of caching and improve performance.
 
+\section{Future Work}
+\subsection{Cache Garbage and Memcached Evictions}
+The cache garbage that generational caching creates is largely a non-issue because the unreferenced cache entries will eventually be evicted based on the LRU policy.
+However, the least recently used cache entry could be valid and might be referenced again in the future even if there more recently used cache entries that are not valid.
+This could happen by viewing resource A and then making several edits to resource B.
+The several invalid cached versions for each edit of resource B are more recently used than the valid resource A cache.
+Our experiments did not run long enough to fill up \textsf{Memcached} and cause any cache entry evictions.
+A future experiment could graph the statistics I have presented along with number of \textsf{Memcached} evictions to find out if it makes any impact on cache misses.
+Also, comparing \textsf{Memcached} miss count to the total amount of memory allocated to \textsf{Memcached} for both caching strategies could yield some interesting results.
 
-% TODO: Write if we want future work.
-%\section{Future Work}
-%How size of cache affects hit rate over long periods of time to evaluate if it's okay to not invalidate anything.
+\subsection{Varied Workloads}
+Our experiments focused on replaying real world traffic to determine how much the generational caching solution affects \textsf{iFixit}.
+Since \textsf{iFixit}'s workload involves many more reads than writes, we didn't see how generational caching affects \textsf{Memcached} miss count in a write heavy workload.
+Generational caching provides many benefits for edits because of the finer-grained caching of ORM objects.
+Graphing \textsf{Memcached} miss count and page response time for varied percentages of reads and writes would be interesting.
+As the number of writes increases, generational caching will likely have better response times compared to \textsf{iFixit}'s current implementation.
 
 
 % ------------- End main chapters ----------------------
