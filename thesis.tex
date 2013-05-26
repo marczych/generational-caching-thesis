@@ -447,7 +447,7 @@ Generational caching makes fine-grained caching trivial because it isn't necessa
 Cache entries can be defined arbitrarily and they will be invalidated when the underlying object is updated as long as the cache key contains the timestamp.
 This technique is employed by \textsf{37Signals}, a SaaS that provides project management tools and origin of the popular web application framework Ruby on Rails\cite{37SignalsDotCom}, and various other websites \cite{keyBasedCacheExpiration}.
 
-One downside to this method is the amount of cache garbage that is generated because cache entries are never deleted.
+One downside to this method is the amount of cache garbage, cache entries that will never be referenced again, that is generated because cache entries are never deleted.
 However, this isn't much of an issue because most caching technologies use an LRU eviction policy so unused cache entries are eventually deleted when the cache fills up.
 Additionally, increasing the cache's capacity to make this even less of an issue is trivial with \textsf{Memcached}.
 
@@ -527,7 +527,7 @@ But first, we must reiterate \textsf{iFixit}'s requirements for such a caching s
 \begin{description}
    \item[R1] The caching strategy must be largely transparent to the developer.
              The developer should only be required to determine what data to cache, not how to cache the data and how to invalidate the cache entries.
-   \item[R2] The caching strategy must allow for finer-grained caching without added complexity.
+   \item[R2] The caching strategy must allow for finer-grained caching without adding complexity to cache invalidation.
    \item[R3] The caching strategy must provide a means of caching and invalidating fragments of HTML\@.
    \item[R4] The caching strategy must result in increased performance in regards to response time and database load.
 \end{description}
@@ -536,7 +536,7 @@ The rest of this chapter is organized as follows.
 In Section~\ref{design} we explain the high-level design of the caching strategy implemented for \textsf{iFixit} and in Section~\ref{implementation} we go over the details of implementing the design in \textsf{iFixit}'s code base.
 
 \section{Design} \label{design}
-Out of existing solutions, generational caching most closely meets these requirements because the cache key changes whenever the underlying data changes, so cache entries no longer need to be explicitly invalidated.
+Out of existing solutions, generational caching most closely meets \textsf{iFixit}'s requirements because cache keys change whenever the underlying data changes, so cache entries no longer need to be explicitly invalidated.
 This allows there to be many cache entries that depend on a single piece of data and the values will not need to be invalidated.
 For these reasons, we used generational caching concepts as a starting point for our caching solution.
 
@@ -679,7 +679,7 @@ By default, the cache key for objects is just the values of primary key columns.
 
 Generational caching relies on a value in the primary table being updated whenever any other data in the table is updated.
 This value can be incorporated into the object's cache key which ensures that the value in the cache will always be correct for that cache key.
-If the data changes then it has a different cache key so the other cache entries don't need to be invalidated.
+The cache key changes when the data changes so cache entries using that cache key don't need to be invalidated.
 To accomplish this, individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
 For guides, this value is the {\tt modified\_date} which is set to the current time in microseconds anytime the guide or any of its children are modified.
 For example, a {\tt Guide} could have cache keys {\tt Guide/1234-en-1368160868.395738} and {\tt Guide/1234-en-1368173958.773968} before and after it is modified, respectively.
@@ -743,7 +743,10 @@ The \textsf{Memcached} operations are performed using {\tt getMulti} to minimize
 All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
 The object is cached for later use once all relevant data from other tables has been retrieved.
 
-% TODO: Give example of what happens when a step is edited.
+Currently when a step is modified, all cache entries depending on the guide the step belongs to are invalidated.
+The next request is forced to retrieve all guide data from the database.
+In our generational caching scheme, a step edit will update the modified dates of the edited step and the guide it belongs to.
+The next request will retrieve the main guide data and edited step from the database but all other data will be cached.
 
 \subsection{Caching HTML and Ad Hoc Queries}
 We also cache fragments of HTML because HTML generation can be fairly slow and unperforming.
@@ -1064,20 +1067,18 @@ Varying 24 hours by {\tt 10\%} means that cache entries will start to expire aft
 This doesn't occur in the generational caching implementation because cache entries aren't set to expire at all which results in a decreasing miss count over time.
 
 \subsection{Requirements}
-In this section we will determine whether or not our caching solution meets the requirements we set out in Chapter~\ref{designAndImplementation}.
+With these results, we have demonstrated that our generational caching solution meets the requirements outlined in Chapter~\ref{designAndImplementation}.
+In particular:
 
 \begin{description}
    \item[R1] The caching solution is largely transparent to the developer.
              The developer uses the ORM object to construct cache keys and any cache entries using the object's cache key are invalidated when the underlying data changes.
-   \item[R2] The caching strategy allows for finer-grained caching without added complexity.
+   \item[R2] The caching strategy allows for finer-grained caching without adding complexity to cache invalidation.
              Since cache entries automatically expire anytime the underlying data changes, the number of cache entries dependent on a piece of data doesn't increase the complexity of cache invalidation.
    \item[R3] The caching solution allows for caching and invalidating fragments of HTML\@.
              This was done at a very granular level with guide steps and they were invalidated as necessary.
    \item[R4] As we saw in Section~\ref{results}, response time, number of database queries, and database query time is reduced using our caching solution.
 \end{description}
-
-% TODO: I think there needs to be a bit more here.
-Since we met all the requirements outlined in Chapter~\ref{designAndImplementation}, our generational caching implementation is a success.
 
 
 \chapter{Conclusion} \label{conclusion}
