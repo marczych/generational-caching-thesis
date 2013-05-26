@@ -886,9 +886,11 @@ Validation is a fairly straightforward process.
 The basic approach involves gathering various statistics with and without our caching strategy during an experiment based on a repeatable and representative set of input data.
 
 \section{Experimental Setup}
-We recorded requests to \textsf{www.iFixit.com} for a full week and selected two 24-hour sets of representative data to use as input to the experiments.
-The first data set is typical traffic during a weekday which involves accessing a high breadth of content at a fairly steady pace.
+We recorded requests to \textsf{www.iFixit.com} for a full week and selected two sets of representative data to use as input to the experiments.
+The first data set is typical traffic which involves accessing a high breadth of content at a fairly steady pace.
+This experiment lasts 48 hours to observe the long term effects of the caching strategies.
 The second data set is traffic during \textsf{iFixit}'s Samsung Galaxy S4 Teardown\cite{ifixitGalaxyS4Teardown}, which involves a large number of reads and writes to the same resource.
+This experiment only lasts 24 hours because the interesting results for this data set are regarding the large spike in traffic which only lasts a few hours.
 
 Since our caching strategy was only applied to guides, the request logs are filtered to only include requests viewing or modifying guides.
 Otherwise, the results would be affected by other non-guide requests which are not using our generational caching method.
@@ -918,8 +920,7 @@ Before each experiment is run, the database is restored to the state it was in w
 This ensures that the data is the same between runs and all views and edits are working with the same data.
 The stats logging table is truncated, so only requests during the experiment are in the table when the test is complete.
 Finally, \textsf{Memcached} is restarted, which empties its contents.
-The experiment is then run for the full 24 hours.
-Afterwards, the stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
+After the experiment is run for the full duration, the stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
 
 \section{Measured Values}
 The most general value we compare is \textit{page response time}, the total amount of time the request spent on our servers.
@@ -940,10 +941,10 @@ For both of these reasons, a decrease in total database query time should be obs
 
 \section{Results} \label{results}
 The following are results from the experiments outlined above.
-\textit{Teardown traffic} refers to the Galaxy S4 Teardown traffic starting right before the teardown was published while \textit{Normal traffic} refers to a standard day of traffic starting and ending at midnight.
+\textit{Teardown traffic} refers to the Galaxy S4 Teardown traffic starting right before the teardown was published while \textit{Normal traffic} refers to two standard days of traffic starting at 11AM\@.
 Figure~\ref{fig:requestsPerSecXTime} shows the requests per second over time for both data sets.
 The \textit{Control} data points are from the code that is currently running \textsf{www.iFixit.com} while the \textit{GC} data points are from our improvements using generational caching.
-All ``over time'' graphs are constructed from 15 minute groupings of requests for a total of 96 data points.
+All ``over time'' graphs are constructed from 15 minute groupings of requests for a total of 96 and 192 data points for the teardown traffic and normal traffic, respectively.
 
 \begin{figure}[h]
 \centering
@@ -952,7 +953,7 @@ All ``over time'' graphs are constructed from 15 minute groupings of requests fo
 \label{fig:requestsPerSecXTime}
 \end{figure}
 
-Various times for all experiments are shown in Table~\ref{tab:averageExperimentTimes}.
+Average times for responses, \textsf{Memcached}, database queries, and HTMl generation during both experiments are shown in Table~\ref{tab:averageExperimentTimes}.
 As we expected, response, database query, and HTML render times decreased for our generational caching implementation.
 However, \textsf{Memcached} time has remained approximately the same.
 
@@ -999,7 +1000,7 @@ Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLR
 Equilibrium is reached much more quickly in the teardown traffic than the normal traffic.
 A similar phenomenon can be seen in \textsf{Memcached} miss count, shown in Figures~\ref{fig:teardownMissCountXTime} and~\ref{fig:normalMissCountXTime}.
 For the majority of the experiments, miss counts are remarkably similar between the control and our generational caching implementation.
-However, miss count for the control increases significantly at the last 2 to 3 hours of the experiment.
+Response time, HTML render time, and cache miss count increase between the 20 and 30 hour marks for the control.
 
 \begin{figure}[htp]
 \centering
@@ -1043,7 +1044,7 @@ However, miss count for the control increases significantly at the last 2 to 3 h
 \end{figure}
 
 \section{Analysis}
-In general, measured values reach equilibrium much more quickly during teardown traffic because most of the requests are for the teardown which is fully cached.
+In general, measured values reach equilibrium much more quickly during teardown traffic because most of the requests are for the teardown which gets cached very early on.
 The normal traffic experiments request a larger breadth of content so a smaller percentage of requested content is cached.
 We can see in Table~\ref{tab:averageExperimentTimes} that the decreased response time is caused by the decreased database and HTML render times.
 In particular, the sum of the differences in database times and HTML render times is roughly equal to the difference in response time.
@@ -1062,7 +1063,7 @@ The first few hours demonstrate how requesting uncached content affects misses b
 There are a large number of misses for the control because of the \textsf{Memcached} {\tt multiGet} call for rendered wiki text.
 Our generational caching implementation also has a large number of misses because cache misses result in more cache {\tt get}s which are also misses.
 They diverge around hour 22 because most guide cache times are set to expire after 24 hours.
-Varying 24 hours by {\tt 10\%} means that cache entries will start to expire after about 22 hours.
+Varying the 24 hour cache times by {\tt 10\%} means that cache entries will start to expire after about 22 hours.
 This doesn't occur in the generational caching implementation because cache entries aren't set to expire at all which results in a decreasing miss count over time.
 
 \subsection{Requirements}
