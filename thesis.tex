@@ -933,12 +933,10 @@ The most general value we compare is \textit{page response time}, the total amou
 Response time should decrease because more data is cached and can be returned faster than before.
 Similarly, \textit{HTML generation time} should decrease because fragments of HTML are now cached.
 
-The interesting values for \textsf{Memcached} stats are \textit{get~count} and \textit{miss~count}.
+The interesting values for \textsf{Memcached} stats are \textit{get~count}, \textit{miss~count}, and \textit{hit~rate}.
 All of these values vary drastically from page to page depending on whether or not the content is cached.
 Pages with uncached content will have a large number of misses while pages with cached content will have either a few cache hits for a large amount of content or many cache hits for finer-grained content that is nested in other cache entries.
-In general, \textsf{Memcached} misses should decrease because cache entries aren't set to expire and the only misses will be for new or changed content.
-Because of the large number of cache hits for rendered wiki text, \textit{cache~hit~rate} will be much higher for the control than our generational caching implementation.
-However, miss count is a more useful measurement because it is less biased once most content is cached.
+In general, \textsf{Memcached} misses should decrease and cache hit rate should increase because cache entries aren't set to expire and the only misses will be for new or changed content.
 
 Finally, the interesting values for \textsf{MySQL} are \textit{query~count} and \textit{total~query~time}.
 Query count should go down because the cache should serve more requests that previously were handled by the database.
@@ -985,6 +983,7 @@ However, \textsf{Memcached} time has remained approximately the same.
 \textsf{Memcached} and database counts for all experiments are shown in Table~\ref{tab:averageExperimentCounts}.
 As we expected, \textsf{Memcached} misses and database queries have decreased for our generational caching implementation.
 However, \textsf{Memcached} gets and cache hit rate go down.
+This phenomenon is explained in Section~\ref{resultsAnalysis}.
 
 % TODO: Comment on cache hit rate going down - mention that it is explained in the analysis.
 \begin{table}[h]
@@ -1053,7 +1052,7 @@ Response time, HTML render time, and cache miss count increase between the 20 an
 \label{fig:normalMissCountXTime}
 \end{figure}
 
-\section{Analysis}
+\section{Analysis} \label{resultsAnalysis}
 % TODO: Include an actual number on number of additional requests during that period.
 In general, measured values reach equilibrium much more quickly during teardown traffic because most of the requests are for the teardown, which gets cached very early on.
 The normal traffic experiments request a larger breadth of content so a smaller percentage of requested content is cached.
