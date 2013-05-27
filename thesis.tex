@@ -340,7 +340,7 @@ All of this is built using Amazon Web Services (AWS) including Elastic Cloud Com
 \end{figure}
 
 
-\subsection{iFixit's Current Caching Strategy}
+\subsection{iFixit's Current Caching Strategy} \label{currentCachingStrategy}
 \textsf{iFixit} currently has a very \textit{ad hoc} approach to caching.
 Any specific pages, database queries, or expensive operations are guarded by a cache {\tt get} with a handcrafted cache key.
 If the object is not in the cache, it is retrieved from the database and stored in the cache for later use.
@@ -914,7 +914,11 @@ More information regarding EC2 specs can be found on AWS's website \cite{awsInst
 \label{fig:experimentalArchitecture}
 \end{figure}
 
-We then replay the requests in the 2 test sets with and without our caching strategy for a total of 4 runs.
+We test 2 caching scenarios.
+The \textit{control} is the caching strategy that is currently in use by \textsf{iFixit}, outlined in Section~\ref{currentCachingStrategy}.
+The \textit{experimental} is the generational caching strategy described in Chapter~\ref{designAndImplementation}.
+
+We replay the requests in the 2 data sets for both \textit{control} and \textit{experimental} for a total of 4 runs.
 Requests are performed using a NodeJS script running on the load balancer making requests to {\tt localhost} to reduce latency between the simulated client and the web servers.
 Every request records \textsf{Memcached}, \textsf{MySQL}, and various other statistics to the database.
 
@@ -923,8 +927,6 @@ This ensures that the data is the same between runs and all views and edits are 
 The stats logging table is truncated, so only requests during the experiment are in the table when the test is complete.
 Finally, \textsf{Memcached} is restarted, which empties its contents.
 After the experiment is run for the full duration, the stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
-
-% TODO: You need a list of all caching scenarios you ran the tests on.
 
 \section{Measured Values}
 The most general value we compare is \textit{page response time}, the total amount of time the request spent on our servers.
