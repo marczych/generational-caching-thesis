@@ -1053,8 +1053,7 @@ Response time, HTML render time, and cache miss count increase between the 20 an
 \end{figure}
 
 \section{Analysis} \label{resultsAnalysis}
-% TODO: Include an actual number on number of additional requests during that period.
-In general, measured values reach equilibrium much more quickly during teardown traffic because most of the requests are for the teardown, which gets cached very early on.
+In general, measured values reach equilibrium much more quickly during teardown traffic because over 30\% of the requests are for the teardown, which gets cached very early on.
 The normal traffic experiments request a larger breadth of content so a smaller percentage of requested content is cached.
 We can see in Table~\ref{tab:averageExperimentTimes} that the decreased response time is caused by the decreased database and HTML render times.
 In particular, the sum of the differences in database times and HTML render times is roughly equal to the difference in response time.
