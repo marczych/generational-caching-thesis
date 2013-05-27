@@ -623,7 +623,7 @@ class Guide extends ORMObject {
   protected $guideid;
   protected $langid;
 
-  // Columns from guide table.
+  // Columns from guides table.
   protected $title;
   protected $difficulty;
   protected $device;
@@ -650,7 +650,7 @@ class Step extends ORMObject {
   // Primary key.
   private $stepid;
 
-  // Columns from step table.
+  // Columns from steps table.
   private $guideid;
   private $langid;
   private $title;
@@ -671,8 +671,9 @@ class Step extends ORMObject {
 \label{fig:cachingExample}
 \end{figure}
 
+The primary table for an ORM object is the database table that it represents.
+For example, the {\tt Guide} ORM object's primary table is {\tt guides}, which contains {\tt guideid}, {\tt langid}, {\tt title}, {\tt difficulty}, etc.
 The primary key of a database table can be used with the ORM to select a single record.
-% TODO: Explain primary table.
 Once the record is loaded, other data not contained in the primary table is loaded and then the entire object is cached.
 For guides, the {\tt Guide} object is retrieved from the DB and then the {\tt Step} objects are loaded afterwards.
 By default, the cache key for objects only includes the values of the primary key columns.
