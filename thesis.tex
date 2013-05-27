@@ -945,13 +945,14 @@ For both of these reasons, a decrease in total database query time should be obs
 
 \section{Results} \label{results}
 The following are results from the experiments outlined above.
-\textit{Teardown traffic} refers to the Galaxy S4 Teardown traffic starting right before the teardown was published while \textit{Normal traffic} refers to two standard days of traffic starting at 11AM\@.
+\textit{Teardown traffic} refers to the Galaxy S4 Teardown traffic starting right before the teardown was published while \textit{Normal traffic} refers to two standard days of traffic.
+Both sets of traffic start at 11AM Mountain Standard Time (MST).
 Figure~\ref{fig:requestsPerSecXTime} shows the requests per second over time for both data sets.
+The \textit{Teardown Traffic Excluding Teardown} data points are from the teardown traffic excluding all views and edits for the teardown content, which is very similar to the normal traffic data set.
 
 All ``over time'' graphs are constructed from 15 minute groupings of requests for a total of 96 and 192 data points for the teardown traffic and normal traffic, respectively.
 The \textit{Control} data points are from the code that is currently running \textsf{www.iFixit.com} while the \textit{GC} data points are from our improvements using generational caching.
 
-% TODO: Show traffic without requests for teardown.
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{assets/requestsPerSecXTime.png}
@@ -959,7 +960,7 @@ The \textit{Control} data points are from the code that is currently running \te
 \label{fig:requestsPerSecXTime}
 \end{figure}
 
-Average times for responses, \textsf{Memcached}, database queries, and HTMl generation during both experiments are shown in Table~\ref{tab:averageExperimentTimes}.
+Average times for responses, \textsf{Memcached}, database queries, and HTML generation during both experiments are shown in Table~\ref{tab:averageExperimentTimes}.
 As we expected, response, database query, and HTML render times decreased for our generational caching implementation.
 However, \textsf{Memcached} time has remained approximately the same.
 
@@ -985,7 +986,6 @@ As we expected, \textsf{Memcached} misses and database queries have decreased fo
 However, \textsf{Memcached} gets and cache hit rate go down.
 This phenomenon is explained in Section~\ref{resultsAnalysis}.
 
-% TODO: Comment on cache hit rate going down - mention that it is explained in the analysis.
 \begin{table}[h]
 \begin{center}
 \begin{tabular}{| l | l | l | l | l |}
