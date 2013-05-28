@@ -305,7 +305,7 @@ This is '''a lot easier''' than opening the [guide|1158|iPod touch].
 All of \textsf{iFixit}'s content is dynamic which means that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
 A dynamic website allows users to have rich, modifiable content that is always up-to-date.
 
-\textsf{iFixit} certainly has a more read-heavy workload, however, writes are still fairly common.
+\textsf{iFixit} certainly has a more read-heavy workload; however, writes are still fairly common.
 Most notably, \textsf{iFixit} is known for its device ``teardowns.''
 These events consist of opening a brand new device as soon as it becomes available on the market.
 The opening process is documented and updated on \textsf{iFixit}'s website in realtime.
@@ -355,7 +355,7 @@ This strategy is particularly useful for data that isn't required to be absolute
 
 The second strategy used by \textsf{iFixit} involves deleting cache entries whenever relevant data is changed.
 It is up to the developer to find the appropriate places to delete cache entries when certain events occur.
-The advantages to this approach are that it's simple to understand, straightforward to implement, and ensures that fresh data is served if done correctly.
+The advantages to this approach are that it is simple to understand, straightforward to implement, and ensures that fresh data is served if done correctly.
 
 \subsubsection{Guides}
 Currently, a database query is always performed to get the main guide data when looking up objects in the ORM\@.
@@ -444,7 +444,7 @@ The timestamp is updated every time the object is modified thus invalidating all
 This approach also updates the timestamps of any objects that depend on the modified object.
 Generational caching makes fine-grained caching trivial because it isn't necessary to enumerate all potential cache keys that depend on an object when it is modified.
 Cache entries can be defined arbitrarily and they will be invalidated when the underlying object is updated as long as the cache key contains the timestamp.
-This technique is employed by \textsf{37Signals}, a SaaS that provides project management tools and origin of the popular web application framework Ruby on Rails\cite{37SignalsDotCom}, and various other websites \cite{keyBasedCacheExpiration}.
+This technique is employed by \textsf{37Signals}, a SaaS that provides project management tools and is the origin of the popular web application framework Ruby on Rails\cite{37SignalsDotCom}, and various other websites \cite{keyBasedCacheExpiration}.
 
 One downside to this method is the amount of cache garbage, cache entries that will never be referenced again, that is generated because cache entries are never deleted.
 However, this isn't much of an issue because most caching technologies use an LRU eviction policy so unused cache entries are eventually deleted when the cache fills up.
@@ -532,7 +532,7 @@ But first, we must reiterate \textsf{iFixit}'s requirements for such a caching s
 \end{description}
 
 The rest of this chapter is organized as follows.
-In Section~\ref{design} we explain the high-level design of the caching strategy implemented for \textsf{iFixit} and in Section~\ref{implementation} we go over the details of implementing the design in \textsf{iFixit}'s code base.
+In Section~\ref{design} we explain the high-level design of the caching strategy implemented for \textsf{iFixit} and in Section~\ref{implementation} we cover the details of implementing the design in \textsf{iFixit}'s code base.
 
 \section{Design} \label{design}
 Out of existing solutions, generational caching most closely meets \textsf{iFixit}'s requirements because cache keys change whenever the underlying data changes, so cache entries no longer need to be explicitly invalidated.
@@ -683,7 +683,7 @@ This value can be incorporated into the object's cache key which ensures that th
 The cache key changes when the data changes so cache entries using that cache key don't need to be invalidated.
 To accomplish this, individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
 For guides, this value is the {\tt modified\_date} which is set to the current time in microseconds anytime the guide or any of its children are modified.
-For example, a {\tt Guide} could have cache keys {\tt Guide/1234-en-1368160868.395738} and {\tt Guide/1234-en-1368173958.773968} before and after it is modified, respectively.
+For example, a {\tt Guide} could have cache keys {\tt Guide/1234-en-1368160000.000000} and {\tt Guide/1234-en-1368161111.111111} before and after it is modified, respectively.
 
 In most cases, the additional cache key columns are not known before retrieving the object and must be retrieved before checking the cache.
 This is typically because the request URL only specifies the primary key and not any other additional information.
@@ -709,7 +709,7 @@ Although only {\tt Step}s are described in this example, there are several other
 
 For fragments of HTML and \textit{ad hoc} query results that can only change when the ORM object changes, the object's full cache key can be used in addition to a qualifying string such as {\tt view-all-html}.
 Any cache entry that does this will be automatically invalidated when the object changes because the cache key will change.
-This allows for fine-grained caching without the need to enumerate and delete all keys that depend on an object.
+This allows for fine-grained caching without the need to enumerate and delete all cache keys that depend on an object.
 
 Occasionally HTML fragments contain data that changes at different times than the ORM object.
 That value could be incorporated into the cache key but it would fragment the cache into many different possibilities thus reducing its effectiveness.
@@ -929,7 +929,7 @@ Finally, \textsf{Memcached} is restarted, which empties its contents.
 After the experiment is run for the full duration, the stats logging table is extracted using {\tt mysqldump} so the data can later be analyzed.
 
 \section{Measured Values}
-The most general value we compare is \textit{page response time}, the total amount of time the request spent on our servers.
+The most general value we compare is \textit{page response time}, the total amount of time requests spend on our servers.
 Response time should decrease because more data is cached and can be returned faster than before.
 Similarly, \textit{HTML generation time} should decrease because fragments of HTML are now cached.
 
@@ -941,7 +941,7 @@ In general, \textsf{Memcached} misses should decrease and cache hit rate should 
 Finally, the interesting values for \textsf{MySQL} are \textit{query~count} and \textit{total~query~time}.
 Query count should go down because the cache should serve more requests that previously were handled by the database.
 Additionally, network overhead is reduced because more content is retrieved in batch using fewer queries.
-For both of these reasons, a decrease in total database query time should be observed.
+For both of these reasons, total database query time should decrease.
 
 \section{Results} \label{results}
 The following are results from the experiments outlined above.
@@ -1097,7 +1097,7 @@ However, ease-of-development, fine-grained cache entries, and cache invalidation
 In particular, cache invalidation becomes more difficult as the number of cache entries that must be invalidated increases.
 Unfortunately, this burden is typically put on the application developer.
 
-Generational caching is a technique that attempts to relieve the burden of cache invalidation even in situations with many dependent cache entries.
+Our approach used generational caching, a technique that attempts to relieve the burden of cache invalidation even in situations with many dependent cache entries.
 The novel idea is that the cache key changes when the underlying data is updated, which is typically achieved by including the data's modified date in the cache key.
 All of the cache entries that depend on that data are effectively invalidated because they won't be referenced again.
 This results in the ability to perform fine-grained caching without forcing the developer to invalidate cache entries when data changes.
