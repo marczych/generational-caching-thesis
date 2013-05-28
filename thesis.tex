@@ -1004,13 +1004,12 @@ This phenomenon is explained in Section~\ref{resultsAnalysis}.
 \end{table}
 
 Figures~\ref{fig:teardownRespTimeXTime} and~\ref{fig:normalRespTimeXTime} show that average response time has decreased uniformly for our generational caching implementation.
-Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime} and~\ref{fig:normalHTMLRenderTimeXTime} show that HTML render time decreases quickly at the beginning and continues to decrease as time goes on.
+Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime}~and~\ref{fig:normalHTMLRenderTimeXTime} show that HTML render time decreases quickly at the beginning and continues to decrease as time goes on.
 Equilibrium is reached much more quickly in the teardown traffic than the normal traffic.
 A similar phenomenon can be seen in \textsf{Memcached} miss count, shown in Figures~\ref{fig:teardownMissCountXTime} and~\ref{fig:normalMissCountXTime}.
 For the majority of the experiments, miss counts are remarkably similar between the control and our generational caching implementation.
-Response time, HTML render time, and cache miss count increase between the 20 and 30 hour marks for the control.
+Response time, HTML render time, and cache miss count increase around hour 21 which is marked by ``Start of cache expirations''.
 
-% TODO: Highlight region with increased misses (hours 20-30ish).
 \begin{figure}[htp]
 \centering
 \includegraphics[width=\textwidth]{assets/teardownRespTimeXTime.png}
