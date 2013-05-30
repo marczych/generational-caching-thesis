@@ -770,6 +770,7 @@ A call to {\tt cacheEnd} signals the end of the cached HTML section.
 This function closes output buffering, gets the contents of the buffer, caches it, and finally outputs the HTML to the user.
 A basic example is shown in Figure~\ref{fig:cacheStartExample}.
 
+% TODO: Change view-all to full_guide_page?
 \begin{figure}[h]
 \begin{ssp}
 \begin{minted}[frame=lines]{php}
@@ -846,10 +847,10 @@ This is demonstrated for {\tt Step}s in Figure~\ref{fig:batchCacheStep}, which i
 <div class="steps">
 <? batchCache($guide->steps, 'step_view', CACHE_FOREVER,
     function($step) { ?>
-   <div class="step">
-     <?= $step->title ?>
-     <? /* Step bullet HTML generation. */ ?>
-   </div>
+  <div class="step">
+    <?= $step->title ?>
+    <? /* Step bullet HTML generation. */ ?>
+  </div>
 <? }); ?>
 </div>
 \end{minted}
