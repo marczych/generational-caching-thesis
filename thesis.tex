@@ -770,11 +770,10 @@ A call to {\tt cacheEnd} signals the end of the cached HTML section.
 This function closes output buffering, gets the contents of the buffer, caches it, and finally outputs the HTML to the user.
 A basic example is shown in Figure~\ref{fig:cacheStartExample}.
 
-% TODO: Change view-all to full_guide_page?
 \begin{figure}[h]
 \begin{ssp}
 \begin{minted}[frame=lines]{php}
-<? if (!cacheStart($guide, 'view-all', CACHE_FOREVER)): ?>
+<? if (!cacheStart($guide, 'full_guide_page', CACHE_FOREVER)): ?>
   <div class="guide">
     <h3><?= $guide->title ?></h3>
     <p>Difficulty: <?= $guide->difficulty ?></p>
