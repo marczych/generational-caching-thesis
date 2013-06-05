@@ -484,10 +484,10 @@ There are two main operations in \textsf{Memcached}: {\tt get} and {\tt set}.
 Clients perform {\tt get} calls by passing in a string cache key that identifies the data that is being requested.
 For example, {\tt users-1234} could be used to identify the {\tt User} object with {\tt userid} of {\tt 1234}.
 The data is returned to the caller if it is in the cache, otherwise the application must retrieve the data from its primary location.
-Data is added to \textsf{Memcached} by calling {\tt set} with a cache key, expiration time, and the data to store in the cache.
+Data is added to \textsf{Memcached} by calling {\tt set} with a cache key, expiration time, and the data to associate with the key.
 Another specialty command is {\tt getMulti} which is used to retrieve multiple keys in one operation.
 This is used to improve client performance by reducing the network overhead associated with retrieving many keys in succession.
-All \textsf{Memcached} operations are constant time ({\tt O(1)}) with respect to the number of elements stored in it.
+All \textsf{Memcached} operations are constant time ({\tt O(1)}).
 
 There are three ways for cached data to be removed from \textsf{Memcached}.
 The expire time the data was set with determines the maximum lifespan of the cache entry for which it is valid.
