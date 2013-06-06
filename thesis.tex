@@ -732,13 +732,76 @@ In order to add caching to {\tt findAllByKey}, we add a wrapper method called {\
 At a very high level, this method constructs cache keys for the given primary keys and performs a cache {\tt getMulti} on them.
 Any objects that were not cached are retrieved from the database using {\tt findAllByKey} and are then stored in the cache.
 
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{| p{.315\textwidth} | p{.29\textwidth} | p{0.295\textwidth} |}
+   \hline
+   Operations & Call stack & Description \\ \hline
+   ~ &
+   {\tt findAllCached} &
+   Call {\tt findAllCached(light)} to get modified dates to construct cache keys.
+   \\ \hline
+   {\tt GET~guide-1234-en} {\tt GET~guide-5678-en} &
+   {\tt findAllCached} {\tt findAllCached(light)} &
+   Cache miss for light Guide objects. Call {\tt findAllByKey(light)} to retrieve data from primary guide table.
+   \\ \hline
+   {\tt GET~Guides} &
+   {\tt findAllCached} {\tt findAllCached(light)} {\tt findAllByKey(light)} &
+   Retrieve data from primary guide table.
+   \\ \hline
+   {\tt SET~guide-1234-en} {\tt SET~guide-5678-en} &
+   {\tt findAllCached} {\tt findAllCached(light)} &
+   Set light Guide objects in the cache.
+   \\ \hline
+   {\tt GET~guide-1234-en-684} {\tt GET~guide-5678-en-798} &
+   {\tt findAllCached} &
+   Cache miss for full Guide objects with modified dates in cache keys.
+   \\ \hline
+   {\tt GET~Steps} {\tt GET~Step~lines} {\tt GET~Step~bullets} {\tt GET~Flags} {\tt GET~Parts~and~tools} &
+   {\tt findAllCached} {\tt findAllByKey} &
+   Retrieve rest of data from other guide tables.
+   \\ \hline
+   {\tt SET~guide-1234-en-684} {\tt SET~guide-5678-en-798} &
+   {\tt findAllCached} &
+   Set full Guide objects in the cache.
+   \\ \hline
+\end{tabular}
+\end{center}
+\caption{Example call of findAllCached for uncached content}
+\label{tab:findAllCachedUncachedExample}
+\end{table}
+
+\begin{table}[h]
+\begin{center}
+\begin{tabular}{| p{.315\textwidth} | p{.29\textwidth} | p{0.295\textwidth} |}
+   \hline
+   Operations & Call stack & Description \\ \hline
+   ~ &
+   {\tt findAllCached} &
+   Call {\tt findAllCached(light)} to get modified dates to construct cache keys.
+   \\ \hline
+   {\tt GET~guide-1234-en} {\tt GET~guide-5678-en} &
+   {\tt findAllCached} {\tt findAllCached(light)} &
+   Cache hit for light Guide objects.
+   \\ \hline
+   {\tt GET~guide-1234-en-684} {\tt GET~guide-5678-en-798} &
+   {\tt findAllCached} &
+   Cache hit for full Guide objects with modified dates in cache keys.
+   \\ \hline
+\end{tabular}
+\end{center}
+\caption{Example call of findAllCached for cached content}
+\label{tab:findAllCachedCachedExample}
+\end{table}
+
 We allow classes derived from the ORM to specify which columns, in addition to the primary key, to include in the cache key.
 More data must be retrieved from the database to construct the cache key if only the primary keys are provided to {\tt findAllCached} and the derived class specifies additional cache key columns.
 Fortunately, we already have a method, {\tt findAllByKey}, that retrieves objects based on their primary key that can be used to retrieve more data.
 However, we can do one better and cache that operation by using {\tt findAllCached} instead.
-For this call, a flag is passed to {\tt findAllCached} that indicates that only the primary table should be loaded.
+For this call, the {\tt light} flag is passed to {\tt findAllCached} to indicate that only the primary table should be loaded.
 Otherwise, all other relevant data is loaded which is exactly what the first {\tt findAllCached} call does.
 The recursive call constructs a cache key using only the primary key to avoid infinite recursion.
+Example calls of {\tt findAllCached} for cached and uncached content are found in Tables~\ref{tab:findAllCachedUncachedExample}~and~\ref{tab:findAllCachedCachedExample}.
 
 The \textsf{Memcached} operations are performed using {\tt getMulti} to minimize the network overhead involved in doing multiple sequential \textsf{Memcached} {\tt get}s.
 All cached objects are retrieved with one {\tt getMulti} call and the uncached objects are retrieved with one database query.
