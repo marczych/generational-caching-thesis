@@ -8,7 +8,7 @@
 
 \documentclass[12pt]{ucthesis}
 
-\usepackage{url}
+\usepackage[hyphens]{url}
 
 \usepackage[pdftex]{graphicx}
 \usepackage[pdftex,plainpages=false,breaklinks=true,colorlinks=true,urlcolor=blue,citecolor=blue,%
@@ -988,7 +988,7 @@ This phenomenon is explained in Section~\ref{resultsAnalysis}.
 
 \begin{table}[h]
 \begin{center}
-\begin{tabular}{| l | l | l | l | l |}
+\begin{tabular}{| l | l | p{2cm} | p{2cm} | l |}
    \hline
    Run & Memcached gets & Memcached misses & Cache hit rate & Queries \\ \hline
    Teardown Control & 97.93 & 5.33 & 0.9456 & 44.51 \\ \hline
