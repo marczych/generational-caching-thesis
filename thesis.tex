@@ -63,7 +63,7 @@
 \author{Marc Zych}
 \degreemonth{June} \degreeyear{2013} \degree{Master of Science}
 \defensemonth{June} \defenseyear{2013}
-\numberofmembers{3} \chair{Alexander Dekhtyar, Ph.D.} \othermemberA{Philip Nico, Ph.D.} \othermemberB{Chris Lupo, Ph.D.} \field{Computer Science} \campus{San Luis Obispo}
+\numberofmembers{3} \chair{Alexander Dekhtyar, Ph.D.} \othermemberA{Phillip Nico, Ph.D.} \othermemberB{Chris Lupo, Ph.D.} \field{Computer Science} \campus{San Luis Obispo}
 \copyrightyears{seven}
 
 
@@ -116,7 +116,7 @@ Our implementation yielded a 20\% improvement in page response time by caching f
 
 \chapter{Introduction} \label{introduction}
 Web scalability has been an issue for websites since the dot-com boom of the late nineties \cite{webServerScaling}.
-All moderately sized websites experience web server issues as their breadth of content and active user base grow.
+All moderately sized websites experience decreased web server stability as their breadth of content and active user base grow.
 If not properly addressed, the website's performance suffers and in some cases the site can get overloaded by requests and stop responding altogether.
 Websites need to be able to scale with increasing site traffic to continue providing a good user experience.
 
@@ -184,9 +184,9 @@ A cache hit occurs when the requested cache entry is in the cache and the value 
 A cache miss occurs when the requested cache entry is not in the cache and the caller must retrieve it from its primary location.
 
 Caching is effective because cache lookups are much faster than retrieving data from its persistent location.
-Additionally, caching exploits locality.
+In order to make use of the fast cache lookups, caching exploits locality.
 Temporal locality is the idea that an item that has been referenced recently will likely be referenced again in the future.
-Spatial locality is the idea that items in nearby storage locations are referenced in close proximity to one another.
+Spatial locality is the idea that items in nearby storage locations are likely to be referenced in close proximity to one another.
 As of late, spatial locality has been broadened for websites to include access patterns such as recommended and related content.
 
 Caches can be either static or dynamic.
@@ -305,7 +305,7 @@ This is '''a lot easier''' than opening the [guide|1158|iPod touch].
 All of \textsf{iFixit}'s content is dynamic which means that handling requests involves gathering data from a database, rendering the page in the application language, and finally returning the resulting HTML to the user.
 A dynamic website allows users to have rich, modifiable content that is always up-to-date.
 
-\textsf{iFixit} certainly has a more read-heavy workload; however, writes are still fairly common.
+\textsf{iFixit} certainly has a read-heavy workload; however, writes are still fairly common.
 Most notably, \textsf{iFixit} is known for its device ``teardowns.''
 These events consist of opening a brand new device as soon as it becomes available on the market.
 The opening process is documented and updated on \textsf{iFixit}'s website in realtime.
@@ -314,7 +314,7 @@ Because of this, the website must be able to handle a read-heavy workload while 
 
 In addition to their main website, \textsf{iFixit} runs \textsf{Dozuki}, a Software as a Service (SaaS) business that provides technical documentation to anyone who needs step-by-step instructions.
 The same code base powers both \textsf{iFixit} and \textsf{Dozuki} which means that we are only interested in performance improvements to both platforms.
-In particular, the general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of this content is private.
+In particular, the general solutions to web scaling, such as full page caching and web server proxy caching, cannot be used because much of \textsf{Dozuki}'s content is private.
 
 The primary bottleneck is the database machine because it has to retrieve data for every incoming HTTP request.
 In contrast, application machines can easily scale horizontally by load balancing requests between them because they are stateless and operate independently of one another.
@@ -328,6 +328,7 @@ At any given time there are four to eight application machines that run \textsf{
 They get all of their data from one master database machine running the Percona build of \textsf{MySQL} which handles all read and write operations.
 There is also one slave database machine that is asynchronously replicated from the master database using \textsf{MySQL}'s built in replication.
 However, this machine is used purely as a backup and does not improve the website's performance.
+% TODO: Explain what Memcached is?
 All application machines access a single \textsf{Memcached} instance with 4GB of space allocated.
 
 All of this is built using Amazon Web Services (AWS) including Elastic Cloud Compute (EC2) for server instances, S3 for storing static assets and images, CloudFront for serving content out of S3 through a Content Delivery Network (CDN), and Elastic Block Store (EBS) for raw block storage on each server instance.
@@ -439,7 +440,7 @@ Those values must be prefetched and set in the cache or the relevant cache entri
 
 \subsubsection{Generational Caching}
 Another caching technique is referred to as key-based cache expiration \cite{keyBasedCacheExpiration} and generational caching \cite{generationalCaching}.
-The idea is that a timestamp, which corresponds to the last time the object was updated, is included in the key for any cache entries that depend on it.
+The idea is that a timestamp, which corresponds to the last time the object was updated, is included in the key for any cache entries that depend on that object.
 The timestamp is updated every time the object is modified thus invalidating all necessary cache entries.
 This approach also updates the timestamps of any objects that depend on the modified object.
 Generational caching makes fine-grained caching trivial because it isn't necessary to enumerate all potential cache keys that depend on an object when it is modified.
@@ -510,8 +511,9 @@ All replacement algorithms operate on a per-slab-class basis.
 \textsf{Memcached} is distributed in nature.
 Adding more servers to a web application involves adding the new \textsf{Memcached} instance's IP address and port to the list of servers that the \textsf{Memcached} client library uses.
 Keys map to exactly one server so the total memory available in the \textsf{Memcached} cluster is the sum of memory available on each instance.
-The client library performs consistent hashing\cite{consistentHashing} on any key lookups to determine which server in the cluster to send the request to.
-The result is that adding and removing servers doesn't drastically impact hit rate because the majority of keys map to the same servers before and after the change.
+The client library determines which server in the cluster to send the request to based on the cache key.
+Adding or removing servers negatively affects the cache's performance because cache keys may map to different servers than they did previously.
+\textsf{Memcached} uses consistent hashing\cite{consistentHashing} for all cache key lookups; this minimizes the adverse effects of adding or removing servers because the majority of cache keys map to the same servers before and after the change.
 
 Because of these features, \textsf{Memcached} is well-suited for web application caching.
 All of its operations are constant-time and are distributed amongst all nodes in the cluster.
@@ -526,7 +528,7 @@ But first, we must reiterate \textsf{iFixit}'s requirements for such a caching s
 \begin{description}
    \item[R1] The caching strategy must be largely transparent to the developer.
              The developer should only be required to determine what data to cache, not how to cache the data and how to invalidate the cache entries.
-   \item[R2] The caching strategy must allow for finer-grained caching without adding complexity to cache invalidation.
+   \item[R2] The caching strategy must allow for fine-grained caching without adding complexity to cache invalidation.
    \item[R3] The caching strategy must provide a means of caching and invalidating fragments of HTML\@.
    \item[R4] The caching strategy must result in increased performance in regards to response time and database load.
 \end{description}
@@ -678,7 +680,7 @@ Once the record is loaded, other data not contained in the primary table is load
 For guides, the {\tt Guide} object is retrieved from the DB and then the {\tt Step} objects are loaded afterwards.
 By default, the cache key for objects only includes the values of the primary key columns.
 
-Generational caching relies on a value in the primary table being updated whenever any other data in the table is updated.
+Generational caching relies on a value in the primary table being updated whenever any data in the table is updated.
 This value can be incorporated into the object's cache key which ensures that the value in the cache will always be correct for that cache key.
 The cache key changes when the data changes so cache entries using that cache key don't need to be invalidated.
 To accomplish this, individual classes extending the ORM specify what columns in addition to the primary key to include in the cache key.
@@ -712,7 +714,7 @@ Any cache entry that does this will be automatically invalidated when the object
 This allows for fine-grained caching without the need to enumerate and delete all cache keys that depend on an object.
 
 Occasionally HTML fragments contain data that changes at different times than the ORM object.
-That value could be incorporated into the cache key but it would fragment the cache into many different possibilities thus reducing its effectiveness.
+That value could be incorporated into the cache key but it would increase the number of possible cache entries for the same data thus reducing its effectiveness.
 For example, {\tt Step}s' {\tt modified\_date}s are updated every time they are modified.
 However, the step number displayed to the user can be different for the same step on different guides because of the order of prerequisite guides.
 Rather than including the step number in the cache key, a placeholder value is used in place of the step number.
@@ -820,7 +822,7 @@ The next request will retrieve the main guide data and edited step from the data
 \label{fig:annotatedCachedGuidePage}
 \end{figure}
 
-We also cache fragments of HTML because HTML generation can be fairly slow and unperforming.
+We also cache fragments of HTML because HTML generation can be fairly slow and underperforming.
 An annotated example guide demonstrating this can be seen in Figure~\ref{fig:annotatedCachedGuidePage}.
 To help facilitate HTML fragment caching, we implemented a few different caching functions for use in HTML templates.
 
