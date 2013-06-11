@@ -1084,22 +1084,21 @@ The control appears to have reached an asymptote after 48 hours.
 \includegraphics[width=\textwidth]{assets/teardownRespTimeXTime.png}
 \caption{Teardown traffic response time}
 \label{fig:teardownRespTimeXTime}
-\end{figure}
-\begin{figure}[htp]
+
+\vspace{2em}
 \centering
 \includegraphics[width=\textwidth]{assets/normalRespTimeXTime.png}
 \caption{Normal traffic response time}
 \label{fig:normalRespTimeXTime}
 \end{figure}
 
-
 \begin{figure}[htp]
 \centering
 \includegraphics[width=\textwidth]{assets/teardownHTMLRenderTimeXTime.png}
 \caption{Teardown traffic HTML render time over time}
 \label{fig:teardownHTMLRenderTimeXTime}
-\end{figure}
-\begin{figure}[htp]
+
+\vspace{2em}
 \centering
 \includegraphics[width=\textwidth]{assets/normalHTMLRenderTimeXTime.png}
 \caption{Normal traffic HTML render time over time}
@@ -1112,8 +1111,8 @@ The control appears to have reached an asymptote after 48 hours.
 \includegraphics[width=\textwidth]{assets/teardownMissCountXTime.png}
 \caption{Teardown traffic cache miss count over time}
 \label{fig:teardownMissCountXTime}
-\end{figure}
-\begin{figure}[htp]
+
+\vspace{2em}
 \centering
 \includegraphics[width=\textwidth]{assets/normalMissCountXTime.png}
 \caption{Normal traffic cache miss count over time}
@@ -1126,8 +1125,8 @@ The control appears to have reached an asymptote after 48 hours.
 \includegraphics[width=\textwidth]{assets/teardownMemcachedUsageXTime.png}
 \caption{Teardown traffic Memcached usage over time}
 \label{fig:teardownMemcachedUsageXTime}
-\end{figure}
-\begin{figure}[htp]
+
+\vspace{2em}
 \centering
 \includegraphics[width=\textwidth]{assets/normalMemcachedUsageXTime.png}
 \caption{Normal traffic Memcached usage over time}
@@ -1156,6 +1155,12 @@ Our generational caching implementation also has a large number of misses becaus
 They diverge around hour 22 because most guide cache times are set to expire after 24 hours.
 Varying the 24 hour cache times by {\tt 10\%} results in cache entries will start to expire after about 22 hours.
 This doesn't occur in the generational caching implementation because cache entries aren't set to expire at all which results in a decreasing miss count over time.
+
+\textsf{Memcached} usage is much higher for generational caching because much more content is being cached.
+Additionally, content isn't set to expire so modifying content results in more cache entries rather than new content replacing existing cache entries.
+There isn't a decrease in \textsf{Memcached} usage at the ``Start of cache expirations'' marker because expired cache entries aren't immediately removed.
+Expired cache entries are removed the next time they are referenced or if cache entries need to be removed because \textsf{Memcached} is filled to capacity and there isn't any space for new entries.
+For the control, any cache misses are immediately followed by cache {\tt set}s so the expired items aren't observed in Figures~\ref{fig:teardownMemcachedUsageXTime}~or~\ref{fig:normalMemcachedUsageXTime}.
 
 \subsection{Requirements}
 With these results, we have demonstrated that our generational caching solution meets the requirements outlined in Chapter~\ref{designAndImplementation}.
