@@ -1068,12 +1068,16 @@ This phenomenon is explained in Section~\ref{resultsAnalysis}.
 \label{tab:averageExperimentCounts}
 \end{table}
 
-Figures~\ref{fig:teardownRespTimeXTime} and~\ref{fig:normalRespTimeXTime} show that average response time has decreased uniformly for our generational caching implementation.
+Figures~\ref{fig:teardownRespTimeXTime}~and~\ref{fig:normalRespTimeXTime} show that average response time has decreased uniformly for our generational caching implementation.
 Likewise, Figures~\ref{fig:teardownHTMLRenderTimeXTime}~and~\ref{fig:normalHTMLRenderTimeXTime} show that HTML render time decreases quickly at the beginning and continues to decrease as time goes on.
 Equilibrium is reached much more quickly in the teardown traffic than the normal traffic.
-A similar phenomenon can be seen in \textsf{Memcached} miss count, shown in Figures~\ref{fig:teardownMissCountXTime} and~\ref{fig:normalMissCountXTime}.
+A similar phenomenon can be seen in \textsf{Memcached} miss count, shown in Figures~\ref{fig:teardownMissCountXTime}~and~\ref{fig:normalMissCountXTime}.
 For the majority of the experiments, miss counts are remarkably similar between the control and our generational caching implementation.
 Response time, HTML render time, and cache miss count increase around hour 21 which is marked by ``Start of cache expirations''.
+
+Figures~\ref{fig:teardownMemcachedUsageXTime}~and~\ref{fig:normalMemcachedUsageXTime} show the amount of space used in \textsf{Memcached} as reported by the {\tt bytes} value in {\tt Memcached::getExtendedStats()}\cite{memcachedStatsDocs}.
+Usage is significantly higher for generational caching than the control and continues to increase over time.
+The control appears to have reached an asymptote after 48 hours.
 
 \begin{figure}[htp]
 \centering
@@ -1116,6 +1120,20 @@ Response time, HTML render time, and cache miss count increase around hour 21 wh
 \label{fig:normalMissCountXTime}
 \end{figure}
 
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/teardownMemcachedUsageXTime.png}
+\caption{Teardown traffic Memcached usage over time}
+\label{fig:teardownMemcachedUsageXTime}
+\end{figure}
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\textwidth]{assets/normalMemcachedUsageXTime.png}
+\caption{Normal traffic Memcached usage over time}
+\label{fig:normalMemcachedUsageXTime}
+\end{figure}
+
 \section{Analysis} \label{resultsAnalysis}
 In general, measured values reach equilibrium much more quickly during teardown traffic because over 30\% of the requests are for the teardown, which gets cached very early on.
 The normal traffic experiments request a larger breadth of content so a smaller percentage of requested content is cached.
@@ -1132,7 +1150,7 @@ Caching HTML in our generational caching implementation eliminates the need for 
 Similarly, cache hit rate decreases for the generational caching implementation because there are no longer a large number of cache hits for rendered wiki text.
 
 \textsf{Memcached} miss counts remain at nearly the same values between the control and generational caching runs for most of the experiment because the requested content is either cached or uncached in both experiments.
-The first few hours demonstrate how requesting uncached content affects misses because \textsf{Memcached} is flushed at the very beginning of the experiments.
+The first few hours demonstrate how requesting uncached content affects misses because \textsf{Memcached} is flushed immediately before the experiments.
 There are a large number of misses for the control because of the \textsf{Memcached} {\tt multiGet} call for rendered wiki text.
 Our generational caching implementation also has a large number of misses because cache misses result in more cache {\tt get}s for nested content which are also misses.
 They diverge around hour 22 because most guide cache times are set to expire after 24 hours.
